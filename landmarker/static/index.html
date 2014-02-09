@@ -67,6 +67,31 @@
     </style>
 </head>
 <body>
+
+<div class="content"></div>
+
+<script type="text/template" id="landmark-template">
+    <table>
+        <thead>
+        <tr>
+            <th>x</th>
+            <th>y</th>
+            <th>z</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% _.each(landmarks, function(lm) { %>
+        <tr>
+            <td><%= lm.get('point').x %></td>
+            <td><%= lm.get('point').y %></td>
+            <td><%= lm.get('point').z %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</script>
+
+
 <script src="js/libs/three.js"></script>
 <script src="js/libs/jquery-2.1.0.js"></script>
 <script src="js/libs/underscore.js"></script>
