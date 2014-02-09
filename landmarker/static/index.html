@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Landmarker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        hr {
+            border: 0px;
+            border-top: 1px solid #ccc;
+        }
+
+        .menubar {
+            background-color: #eee;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .menubar .menu {
+            float: left;
+            width: 50px;
+            cursor: pointer;
+        }
+
+        .menubar .menu .options {
+            padding: 5px 0px;
+            background-color: #fff;
+            width: 140px;
+        }
+
+        .menubar .menu .options hr {
+            border-color: #ddd;
+        }
+
+        .menubar .menu .options .option {
+            color: #666;
+            background-color: transparent;
+            padding: 5px 10px;
+            margin: 0px !important;
+        }
+
+        .menubar .menu .options .option:hover {
+            color: #fff;
+            background-color: #08f;
+        }
+
+        .toolbar {
+            background-color: #999;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #eee;
+            overflow: auto;
+        }
+
+        .sidebar .Panel {
+            margin-bottom: 10px;
+        }
+
+    </style>
+</head>
+<body>
+<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+<script src="js/libs/system.min.js"></script>
+<script src="js/libs/signals.min.js"></script>
+<script src="js/UI.js"></script>
+
+<script src="js/loaders/BinaryLoader.js"></script>
+<script src="js/loaders/ColladaLoader.js"></script>
+<script src="js/loaders/OBJLoader.js"></script>
+<script src="js/loaders/PLYLoader.js"></script>
+<script src="js/loaders/STLLoader.js"></script>
+<script src="js/loaders/UTF8Loader.js"></script>
+<script src="js/loaders/VTKLoader.js"></script>
+<script src="js/loaders/ctm/lzma.js"></script>
+<script src="js/loaders/ctm/ctm.js"></script>
+<script src="js/loaders/ctm/CTMLoader.js"></script>
+
+<script src="js/utils.js"></script>
+<script src="js/viewer.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/landmark.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
