@@ -82,7 +82,7 @@
         <tbody>
         <% _.each(landmarks, function(lm) { %>
         <tr>
-            <td><%= lm.get('point').x %></td>
+            <td><%= lm.get('point') !== null %></td>
             <td><%= lm.get('point').y %></td>
             <td><%= lm.get('point').z %></td>
         </tr>

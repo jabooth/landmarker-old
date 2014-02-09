@@ -20,7 +20,7 @@ viewport.setTop('0px');
 viewport.setLeft('0px');
 viewport.setRight('0px');
 viewport.setBottom('0px');
-//document.body.appendChild(viewport.dom);
+document.body.appendChild(viewport.dom);
 
 document.addEventListener('dragover', function (event) {
     event.preventDefault();
@@ -137,7 +137,7 @@ BB.EmptyLandmarkSet = function (labels, nLandmarks) {
         lmgroup = new BB.LandmarkGroup({label: labels[i]});
         lms = lmgroup.get("landmarks");
         for (j = 0; j < nLandmarks[i]; j++) {
-           lms.add(new BB.Landmark({point: new THREE.Vector3(4,5,6)}));
+           lms.add(new BB.Landmark);
         }
         lmgroups.add(lmgroup);
     }
@@ -158,7 +158,7 @@ lmg_re.get("landmarks").add([lm1, lm2, lm3]);
 var lms = BB.EmptyLandmarkSet(['l_eye', 'r_eye'], [3, 4]);
 
 
-var BodyView = Backbone.View.extend({
+var LmGroupView = Backbone.View.extend({
     el: '.content',
 
     initialize: function() {
@@ -166,10 +166,11 @@ var BodyView = Backbone.View.extend({
     },
 
     render: function() {
-        var template = _.template($("#landmark-template").html(), {landmarks: this.model.models});
+        var template = _.template($("#landmark-template").html(),
+            {landmarks: this.model.get("landmarks").models});
         this.$el.html(template);
         return this;
     }
 });
 
-var body = new BodyView({model: lms.get("groups").at(0).get("landmarks")});
+var body = new LmGroupView({model: lms.get("groups").at(0)});
