@@ -452,7 +452,7 @@ LM.saveAndRebuild = function (lmSet) {
 };
 
 
-LM.Mesh = function (mesh) {
+LM.Mesh = function (mesh, filename) {
 
     function toJSON () {
         var trilist = _.map(mesh.geometry.faces, function (face) {
@@ -465,7 +465,8 @@ LM.Mesh = function (mesh) {
 
         return {
             points: points,
-            trilist: trilist
+            trilist: trilist,
+            filename: filename
         };
     }
 
@@ -484,5 +485,5 @@ LM.MeshFromJSON = function (obj) {
         geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
     });
     var material = new THREE.MeshPhongMaterial();
-    return LM.Mesh(new THREE.Mesh(geometry, material));
+    return LM.Mesh(new THREE.Mesh(geometry, material), obj.filename);
 };

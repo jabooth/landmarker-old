@@ -91,7 +91,7 @@ document.addEventListener('keyup', function (event) {
 
 // TODO remove this
 // add a basic LM set to get started
-var lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
+var lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1]);
 
 var meshL;
 
@@ -99,7 +99,7 @@ signals.meshChanged.add( function (mesh) {
     // get a handle on the current mesh
     meshL = mesh;
     // make a fresh LM set
-    lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
+    lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1]);
     console.log("clearing landmarks for new face");
     signals.landmarkSetChanged.dispatch(lmSet);
 });

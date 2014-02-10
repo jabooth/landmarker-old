@@ -1,10 +1,11 @@
+import json
+import os
+from os import path
 
 from flask import Flask, request
 from flask.ext.restful import reqparse, abort, Api, Resource
 
 import pybug.io as pio
-import os
-from os import path
 
 
 class Config:
@@ -14,7 +15,6 @@ config = Config
 config.gzip = False  # halves payload, increases server workload
 config.model_dir = './models'
 config.landmark_dir = './landmarks'
-
 
 app = Flask(__name__, static_url_path='')
 
@@ -28,6 +28,7 @@ api = Api(app)
 models = list(pio.import_meshes(os.path.join(config.model_dir, '*')))
 models = {path.splitext(path.basename(m.filepath))[0]: m.toJSON()
           for m in models}
+
 
 class Model(Resource):
 
@@ -47,7 +48,12 @@ class ModelList(Resource):
 class Landmark(Resource):
 
     def put(self, model_id):
-        print request.form['data']
+        # TODO validate data
+        fp = os.path.join(config.landmark_dir, model_id + '.json')
+        with open(fp, 'wb') as f:
+            json.dump(request.json, f, sort_keys=True, indent=4,
+                      separators=(',', ': '))
+        print type(request.json)
 
 
 class LandmarkList(Resource):

@@ -43,7 +43,7 @@ RIO.RESTClient = function (restURL) {
             dataType: 'json',
             type: 'PUT',
             processData: false,
-            data: JSON.stringify({'a': 'b'}),
+            data: JSON.stringify(lms),
             success: function(result) {
                 console.log("YYYYEARR");
             }
