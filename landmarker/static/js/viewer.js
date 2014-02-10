@@ -1,17 +1,8 @@
-var Viewport = function (signals) {
+var Viewport = function (signals, $dom) {
+    // capture the raw dom
+    var dom = $dom[0];
 
-    var container = new UI.Panel();
-    container.setPosition('absolute');
-    container.setBackgroundColor('#aaa');
     var clearColor = 0xAAAAAA;
-
-    var info = new UI.Text();
-    info.setPosition('absolute');
-    info.setRight('5px');
-    info.setBottom('5px');
-    info.setFontSize('12px');
-    info.setColor('#ffffff');
-    container.add(info);
 
     // state
     var landmarkSet = null;  // only ever hold one landmark set
@@ -30,7 +21,7 @@ var Viewport = function (signals) {
     // ----- SCENE AND CAMERA ----- //
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(50,
-        container.dom.offsetWidth / container.dom.offsetHeight, 0.02, 5000);
+        dom.offsetWidth / dom.offsetHeight, 0.02, 5000);
     camera.position.set(500, 250, 500);
     camera.lookAt(scene.position);
 
@@ -78,8 +69,8 @@ var Viewport = function (signals) {
         // ----- EVENTS ----- //
         var getIntersects = function (event, object) {
             var vector = new THREE.Vector3(
-                (event.layerX / container.dom.offsetWidth) * 2 - 1,
-                -(event.layerY / container.dom.offsetHeight) * 2 + 1, 0.5);
+                (event.layerX / dom.offsetWidth) * 2 - 1,
+                -(event.layerY / dom.offsetHeight) * 2 + 1, 0.5);
             projector.unprojectVector(vector, camera);
             ray.set(camera.position, vector.sub(camera.position).normalize());
             if (object instanceof Array) {
@@ -90,7 +81,7 @@ var Viewport = function (signals) {
 
         var onMouseDown = function (event) {
             event.preventDefault();
-            container.dom.focus();
+            dom.focus();
             onMouseDownPosition.set(event.layerX, event.layerY);
             if (event.button === 0) {  // left mouse button
                 intersectionsWithLms = getIntersects(event, landmarkSymbols);
@@ -237,12 +228,12 @@ var Viewport = function (signals) {
         }
     })();
 
-    container.dom.addEventListener('mousedown', mouseHandlers.mouseDown, false);
-    container.dom.addEventListener('dblclick', mouseHandlers.doubleClick, false);
+    dom.addEventListener('mousedown', mouseHandlers.mouseDown, false);
+    dom.addEventListener('dblclick', mouseHandlers.doubleClick, false);
 
     // controls need to be added *after* main logic,
     // otherwise cameraControls.enabled doesn't work.
-    var cameraControls = new JAB.CameraController(camera, container.dom);
+    var cameraControls = new JAB.CameraController(camera, dom);
     // when the camera updates, render
     cameraControls.addEventListener('change', function () {
         render();
@@ -250,13 +241,13 @@ var Viewport = function (signals) {
 
     // ----- SIGNALS ----- //
     signals.rendererChanged.add(function (object) {
-        container.dom.removeChild(renderer.domElement);
+        dom.removeChild(renderer.domElement);
         renderer = object;
         renderer.setClearColor(clearColor);
         renderer.autoClear = false;
         renderer.autoUpdateScene = false;
-        renderer.setSize(container.dom.offsetWidth, container.dom.offsetHeight);
-        container.dom.appendChild(renderer.domElement);
+        renderer.setSize(dom.offsetWidth, dom.offsetHeight);
+        dom.appendChild(renderer.domElement);
         render();
     });
 
@@ -268,7 +259,6 @@ var Viewport = function (signals) {
         console.log("Adding face to the scene");
         scene.add(object);
         mesh = object;
-        updateInfo();
         render();
     });
 
@@ -279,9 +269,9 @@ var Viewport = function (signals) {
     });
 
     signals.windowResize.add(function () {
-        camera.aspect = container.dom.offsetWidth / container.dom.offsetHeight;
+        camera.aspect = dom.offsetWidth / dom.offsetHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(container.dom.offsetWidth, container.dom.offsetHeight);
+        renderer.setSize(dom.offsetWidth, dom.offsetHeight);
         render();
     });
 
@@ -356,24 +346,8 @@ var Viewport = function (signals) {
     renderer.setClearColor(clearColor);
     renderer.autoClear = false;
     renderer.autoUpdateScene = false;
-    container.dom.appendChild(renderer.domElement);
+    dom.appendChild(renderer.domElement);
     animate();
-
-    // update the local info object to be up to date
-    // only on object addition, removal, or updating
-    function updateInfo() {
-        var objects = 0;
-        var vertices = 0;
-        var faces = 0;
-        scene.traverse(function (object) {
-            if (object instanceof THREE.Mesh) {
-                objects++;
-                vertices += object.geometry.vertices.length;
-                faces += object.geometry.faces.length;
-            }
-        });
-        info.setValue('objects: ' + objects + ', vertices: ' + vertices + ', faces: ' + faces);
-    }
 
     // the actual render loop
     function animate() {
@@ -399,7 +373,7 @@ var Viewport = function (signals) {
         render();
     });
 
-    return container;
+    return $dom;
 };
 
 //TODO need to not add landmark on double click
