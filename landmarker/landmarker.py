@@ -47,7 +47,7 @@ class ModelList(Resource):
 class Landmark(Resource):
 
     def put(self, model_id):
-        request.form['data']
+        print request.form['data']
 
 
 class LandmarkList(Resource):
@@ -59,10 +59,12 @@ class LandmarkList(Resource):
 api.add_resource(ModelList, '/models/')
 api.add_resource(Model, '/models/<string:model_id>')
 api.add_resource(LandmarkList, '/landmarks/')
+api.add_resource(Landmark, '/landmarks/<string:model_id>')
+
 
 # @app.route('/static')
 # def root():
 #     return app.send_static_file('index.html')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

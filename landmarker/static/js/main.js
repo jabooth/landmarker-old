@@ -89,6 +89,7 @@ document.addEventListener('keyup', function (event) {
     }
 }, false);
 
+// TODO remove this
 // add a basic LM set to get started
 var lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
 
@@ -103,10 +104,5 @@ signals.meshChanged.add( function (mesh) {
     signals.landmarkSetChanged.dispatch(lmSet);
 });
 
-var resturl = "http://localhost:5000/models/ioannis"
-
-
-$.getJSON("http://localhost:5000/models/ioannis_1", function(data) {
-    $('.mesh-points').append(data.points);
-    $('.mesh-trilist').append(data.trilist);
-});
+var restURL = "http://localhost:5000/";
+var restClient = RIO.RESTClient(restURL);
