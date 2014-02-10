@@ -82,8 +82,13 @@ var parseFile = function (signals, file, filename, extension) {
     }
 
     function loadMesh(mesh) {
+        // don't want fancy scene graphs
+        while (mesh.children.length > 1) {
+            mesh = mesh.children[0];
+        }
         mesh.name = filename;
-        signals.meshChanged.dispatch(mesh);
+        // wrap the mesh in our type and dispatch
+        signals.meshChanged.dispatch(LM.Mesh(mesh));
     }
 };
 

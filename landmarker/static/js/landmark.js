@@ -102,18 +102,12 @@ LM.Landmark = function (vector3) {
     }
 
     function  toJSON() {
+        var pointJSON = [null, null, null];
         if (!isEmpty()) {
-            return {
-                x: point.x,
-                y: point.y,
-                z: point.z
-            }
-        } else {
-            return {
-                x: null,
-                y: null,
-                z: null
-            }
+            pointJSON = [point.x, point.y, point.z];
+        }
+        return {
+            point: pointJSON
         }
     }
 
@@ -441,7 +435,7 @@ LM.LandmarkSetFromJSON = function (obj) {
     });
     var groupedPoints = _.map(groups, function (group) {
         return _.map(group, function (lm) {
-            return new THREE.Vector3(lm.x, lm.y, lm.z);
+            return new THREE.Vector3(lm.point[0], lm.point[1], lm.point[2]);
         })
     });
     var nPointsPerGroup = _.map(groupedPoints, function (points) {
@@ -455,4 +449,40 @@ LM.saveAndRebuild = function (lmSet) {
     var x = JSON.stringify(lmSet);
     var obj = JSON.parse(x);
     return LM.LandmarkSetFromJSON(obj);
-}
+};
+
+
+LM.Mesh = function (mesh) {
+
+    function toJSON () {
+        var trilist = _.map(mesh.geometry.faces, function (face) {
+            return [face.a, face.b, face.c];
+        });
+
+        var points = _.map(mesh.geometry.vertices, function (v) {
+            return [v.x, v.y, v.z];
+        });
+
+        return {
+            points: points,
+            trilist: trilist
+        };
+    }
+
+    return {
+        toJSON: toJSON,
+        getMesh: function() {return mesh;}
+    }
+};
+
+LM.MeshFromJSON = function (obj) {
+    var geometry = new THREE.Geometry();
+    _.each(obj.points, function (v) {
+        geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]));
+    });
+    _.each(obj.trilist, function (tl) {
+        geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
+    });
+    var material = new THREE.MeshPhongMaterial();
+    return LM.Mesh(new THREE.Mesh(geometry, material));
+};

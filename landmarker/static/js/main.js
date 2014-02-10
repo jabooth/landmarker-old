@@ -92,9 +92,14 @@ document.addEventListener('keyup', function (event) {
 // add a basic LM set to get started
 var lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
 
+var meshL;
+
 signals.meshChanged.add( function (mesh) {
+    // get a handle on the current mesh
+    meshL = mesh;
     // make a fresh LM set
     lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
-    console.log("clearing landmarks for new face")
+    console.log("clearing landmarks for new face");
     signals.landmarkSetChanged.dispatch(lmSet);
 });
+

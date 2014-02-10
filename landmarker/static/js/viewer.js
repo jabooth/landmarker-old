@@ -84,7 +84,7 @@ var Viewport = function (signals, keyboard, $dom) {
             dom.focus();
             onMouseDownPosition.set(event.layerX, event.layerY);
             intersectionsWithLms = getIntersects(event, landmarkSymbols);
-            intersectionsWithMesh = getIntersects(event, mesh);
+            intersectionsWithMesh = getIntersects(event, mesh.getMesh());
             if (event.button === 0) {  // left mouse button
                 if (intersectionsWithLms.length > 0 &&
                     intersectionsWithMesh.length > 0) {
@@ -110,7 +110,7 @@ var Viewport = function (signals, keyboard, $dom) {
             function meshPressed() {
                 if (keyboard.ctrl) {
                     // focus the camera to the point selected
-                    var intersects = getIntersects(event, mesh);
+                    var intersects = getIntersects(event, mesh.getMesh());
                     if (intersects.length > 0) {
                         cameraControls.focus(intersects[0].point);
                         cameraControls.enabled = true;
@@ -208,7 +208,8 @@ var Viewport = function (signals, keyboard, $dom) {
                         camToLm = lm.getPoint().sub(camera.position).normalize();
                         // make the ray point from camera to this point
                         ray.set(camera.position, camToLm);
-                        intersectionsWithLms = ray.intersectObject(mesh, true);
+                        intersectionsWithLms = ray.intersectObject(
+                            mesh.getMesh(), true);
                         if (intersectionsWithLms.length > 0) {
                             // good, we're still on the mesh.
                             lm.setPoint(intersectionsWithLms[0].point);
@@ -267,10 +268,10 @@ var Viewport = function (signals, keyboard, $dom) {
     signals.meshChanged.add(function (object) {
         if (mesh !== null) {
             console.log("Removing existing face");
-            scene.remove(mesh);
+            scene.remove(mesh.getMesh());
         }
         console.log("Adding face to the scene");
-        scene.add(object);
+        scene.add(object.getMesh());
         mesh = object;
         render();
     });
