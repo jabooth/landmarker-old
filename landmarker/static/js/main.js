@@ -90,11 +90,11 @@ document.addEventListener('keyup', function (event) {
 }, false);
 
 // add a basic LM set to get started
-var lmSet = LM.LandmarkSet(['PTS'], [68]);
+var lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
 
 signals.meshChanged.add( function (mesh) {
     // make a fresh LM set
-    lmSet = LM.LandmarkSet(['PTS'], [68]);
+    lmSet = LM.LandmarkSet(['PTS', 'a', 'l_ete'], [2, 3, 1]);
     console.log("clearing landmarks for new face")
     signals.landmarkSetChanged.dispatch(lmSet);
 });

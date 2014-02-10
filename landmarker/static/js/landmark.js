@@ -3,10 +3,17 @@
  */
 // TODO make some methods hidden (just between these three objects)
 LM = {};
-LM.Landmark = function () {
+
+// v == THREE.Vector3
+LM.Landmark = function (vector3) {
 
     var point = null;
     var snapshottedPoint = null;
+    if (vector3 !== undefined) {
+        // point has been provided
+        point = vector3.clone();
+        snapshottedPoint = vector3.clone();
+    }
     var selected = false;
 
     function getPoint() {
@@ -94,6 +101,22 @@ LM.Landmark = function () {
         }
     }
 
+    function  toJSON() {
+        if (!isEmpty()) {
+            return {
+                x: point.x,
+                y: point.y,
+                z: point.z
+            }
+        } else {
+            return {
+                x: null,
+                y: null,
+                z: null
+            }
+        }
+    }
+
     return {
         getPoint: getPoint,
         setPoint: setPoint,
@@ -106,15 +129,20 @@ LM.Landmark = function () {
         deselect: deselect,
         clear: clear,
         clone: clone,
-        equalTo: equalTo
+        equalTo: equalTo,
+        toJSON: toJSON
     }
 };
 
-LM.LandmarkGroup = function(label, nLandmarksOnLabel) {
+LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     var landmarks = [];
     var i;
     for (i = 0; i < nLandmarksOnLabel; i++) {
-        landmarks.push(LM.Landmark());
+        if (values !== undefined) {
+            landmarks.push(LM.Landmark(values[i]));
+        } else {
+            landmarks.push(LM.Landmark());
+        }
     }
 
     function getLabel() {
@@ -204,6 +232,12 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel) {
         return newLMGroup;
     }
 
+    function toJSON() {
+        var tmp = {}
+        tmp[getLabel()] = landmarks;
+        return tmp;
+    }
+
     return {
         getLabel: getLabel,
         getLandmark: getLandmark,
@@ -217,19 +251,24 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel) {
         clearAll: clearAll,
         firstEmptyLandmark: firstEmptyLandmark,
         selectedLandmarks: selectedLandmarks,
-        clone: clone
+        clone: clone,
+        toJSON: toJSON
     }
 };
 
-LM.LandmarkSet = function (labels, nLandmarksPerLabel) {
+LM.LandmarkSet = function (labels, nLandmarksPerLabel, groupedValues) {
     if (labels.length !== nLandmarksPerLabel.length) {
         throw("Labels and nLandmarksPerLabel need to be the same length");
     }
     var landmarkGroups = {};
     var activeGroupLabel = labels[0];
+    var values = undefined;
     for (var i = 0; i < labels.length; i++) {
+        if (groupedValues !== undefined) {
+            values = groupedValues[i];
+        }
         landmarkGroups[labels[i]] = LM.LandmarkGroup(labels[i],
-            nLandmarksPerLabel[i]);
+            nLandmarksPerLabel[i], values);
     }
 
     // history
@@ -362,6 +401,23 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel) {
         landmarkGroups[state.label] = state.group.clone();
     }
 
+    function toJSON() {
+        // pull off the values
+        // reduce over the list of groups, building amalgamating them together
+        var result = _.reduce(landmarkGroups, function (memo, group) {
+            var groupJSON = group.toJSON();  // {'label': [lm1, ...]}
+            _.each(groupJSON, function (value, key) {
+                memo[key] = value; // reduction step
+            });
+            return memo;
+        }, {});
+
+        return {
+            groups: result
+        }
+    }
+
+
     return {
         getLabels: getLabels,
         getGroup: getGroup,
@@ -373,6 +429,30 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel) {
         deselectAll: deselectAll,
         snapshotGroup: snapshotGroup,
         undo: undo,
-        redo: redo
+        redo: redo,
+        toJSON: toJSON
     }
 };
+
+LM.LandmarkSetFromJSON = function (obj) {
+    var groups = obj.groups;
+    var labels = _.map(groups, function (group, label) {
+        return label;
+    });
+    var groupedPoints = _.map(groups, function (group) {
+        return _.map(group, function (lm) {
+            return new THREE.Vector3(lm.x, lm.y, lm.z);
+        })
+    });
+    var nPointsPerGroup = _.map(groupedPoints, function (points) {
+       return points.length;
+    });
+    return LM.LandmarkSet(labels, nPointsPerGroup, groupedPoints);
+};
+
+
+LM.saveAndRebuild = function (lmSet) {
+    var x = JSON.stringify(lmSet);
+    var obj = JSON.parse(x);
+    return LM.LandmarkSetFromJSON(obj);
+}
