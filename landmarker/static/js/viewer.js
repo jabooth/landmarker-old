@@ -1,4 +1,4 @@
-var Viewport = function (signals, $dom) {
+var Viewport = function (signals, keyboard, $dom) {
     // capture the raw dom
     var dom = $dom[0];
 
@@ -83,9 +83,9 @@ var Viewport = function (signals, $dom) {
             event.preventDefault();
             dom.focus();
             onMouseDownPosition.set(event.layerX, event.layerY);
+            intersectionsWithLms = getIntersects(event, landmarkSymbols);
+            intersectionsWithMesh = getIntersects(event, mesh);
             if (event.button === 0) {  // left mouse button
-                intersectionsWithLms = getIntersects(event, landmarkSymbols);
-                intersectionsWithMesh = getIntersects(event, mesh);
                 if (intersectionsWithLms.length > 0 &&
                     intersectionsWithMesh.length > 0) {
                     // degenerate case - which is closer?
@@ -102,10 +102,20 @@ var Viewport = function (signals, $dom) {
                 } else {
                     nothingPressed();
                 }
-                document.addEventListener('mouseup', onMouseUp, false);
+                if (!keyboard.ctrl) {
+                    document.addEventListener('mouseup', onMouseUp, false);
+                }
             }
 
             function meshPressed() {
+                if (keyboard.ctrl) {
+                    // focus the camera to the point selected
+                    var intersects = getIntersects(event, mesh);
+                    if (intersects.length > 0) {
+                        cameraControls.focus(intersects[0].point);
+                        cameraControls.enabled = true;
+                    }
+                }
                 pressedDownOn = PDO.mesh;
             }
 
@@ -115,8 +125,13 @@ var Viewport = function (signals, $dom) {
                 // the clicked on landmark
                 var landmarkSymbol = intersectionsWithLms[0].object;
                 var lmInfo = landmarkSymbolToLandmark[landmarkSymbol.id];
-                // select this landmark, and deselect the rest.
-                lmSet.deselectAll();
+                // if user isn't holding down shift or doesn't have multiple
+                // selected, deselect rest
+                if (!(keyboard.shift ||
+                    lmSet.getActiveGroup().nSelectedLandmarks() > 1)) {
+                    lmSet.deselectAll();
+                }
+                // select this landmark
                 lmInfo.landmark.select();
                 signals.landmarkSetChanged.dispatch(lmSet);
                 // now we've selected the landmark, we want to enable dragging.
@@ -170,7 +185,10 @@ var Viewport = function (signals, $dom) {
                     //  a click on mesh
                     p = intersectionsWithMesh[0].point;
                     lm = landmarkSet.insertNewLandmark(p);
+                    lmSet.getActiveGroup().deselectAll();
+                    lm.select();
                     lmSet.snapshotGroup();
+                    // TODO should this be a whole group (are we tracking sel)
                     signals.landmarkChanged.dispatch(lm);
                     render();
                 } else if (pressedDownOn === PDO.nothing) {
@@ -214,12 +232,7 @@ var Viewport = function (signals, $dom) {
         };
 
         var onDoubleClick = function (event) {
-            // focus the camera to the point selected
-            var intersects = getIntersects(event, mesh);
-            if (intersects.length > 0) {
-                cameraControls.focus(intersects[0].point);
-                cameraControls.enabled = true;
-            }
+
         };
 
         return {
@@ -375,5 +388,3 @@ var Viewport = function (signals, $dom) {
 
     return $dom;
 };
-
-//TODO need to not add landmark on double click

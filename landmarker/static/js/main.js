@@ -15,7 +15,13 @@ var signals = {
     resetView: new SIGNALS.Signal()
 };
 
-var viewport = new Viewport(signals, $('.viewport'));
+var keyboard = {
+    ctrl: false,
+    shift: false,
+    delete: false
+}
+
+var viewport = new Viewport(signals, keyboard, $('.viewport'));
 
 document.addEventListener('dragover', function (event) {
     event.preventDefault();
@@ -44,7 +50,7 @@ var lmSet = LM.LandmarkSet(['PTS'], [68]);
 signals.landmarkSetChanged.dispatch(lmSet);
 
 document.addEventListener('keydown', function (event) {
-    console.log(event.keyCode);
+    console.log("down: " + event.keyCode);
     switch (event.keyCode) {
         case 46:  // delete
             // TODO should clear selected landmarks
@@ -59,6 +65,29 @@ document.addEventListener('keydown', function (event) {
             break;
         case 32: // spacebar
             signals.resetView.dispatch();
+            break;
+        case 16: // shift
+            keyboard.shift = true;
+            break;
+        case 17:  // ctrl
+            keyboard.ctrl = true;
+            break;
+        case 27:  // esc
+            lmSet.deselectAll();
+            signals.landmarkSetChanged.dispatch(lmSet);
+            break;
+    }
+}, false);
+
+
+document.addEventListener('keyup', function (event) {
+    console.log("up: " + event.keyCode);
+    switch (event.keyCode) {
+        case 16:  // shit
+            keyboard.shift = false;
+            break;
+        case 17:  // ctrl
+            keyboard.ctrl = false;
             break;
     }
 }, false);
