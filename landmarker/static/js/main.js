@@ -103,3 +103,10 @@ signals.meshChanged.add( function (mesh) {
     signals.landmarkSetChanged.dispatch(lmSet);
 });
 
+var resturl = "http://localhost:5000/models/ioannis"
+
+
+$.getJSON("http://localhost:5000/models/ioannis_1", function(data) {
+    $('.mesh-points').append(data.points);
+    $('.mesh-trilist').append(data.trilist);
+});
