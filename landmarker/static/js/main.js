@@ -46,9 +46,6 @@ window.addEventListener('resize', onWindowResize, false);
 onWindowResize();
 
 
-var lmSet = LM.LandmarkSet(['PTS'], [68]);
-signals.landmarkSetChanged.dispatch(lmSet);
-
 document.addEventListener('keydown', function (event) {
     console.log("down: " + event.keyCode);
     switch (event.keyCode) {
@@ -91,3 +88,13 @@ document.addEventListener('keyup', function (event) {
             break;
     }
 }, false);
+
+// add a basic LM set to get started
+var lmSet = LM.LandmarkSet(['PTS'], [68]);
+
+signals.meshChanged.add( function (mesh) {
+    // make a fresh LM set
+    lmSet = LM.LandmarkSet(['PTS'], [68]);
+    console.log("clearing landmarks for new face")
+    signals.landmarkSetChanged.dispatch(lmSet);
+});
