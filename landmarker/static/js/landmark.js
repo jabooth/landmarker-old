@@ -250,7 +250,7 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     }
 };
 
-LM.LandmarkSet = function (labels, nLandmarksPerLabel, groupedValues) {
+LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
     if (labels.length !== nLandmarksPerLabel.length) {
         throw("Labels and nLandmarksPerLabel need to be the same length");
     }
@@ -407,7 +407,9 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel, groupedValues) {
         }, {});
 
         return {
-            groups: result
+            groups: result,
+            modelId: modelId,
+            version: 1
         }
     }
 
@@ -441,7 +443,7 @@ LM.LandmarkSetFromJSON = function (obj) {
     var nPointsPerGroup = _.map(groupedPoints, function (points) {
        return points.length;
     });
-    return LM.LandmarkSet(labels, nPointsPerGroup, groupedPoints);
+    return LM.LandmarkSet(labels, nPointsPerGroup, groupedPoints, obj.modelId);
 };
 
 
@@ -452,7 +454,7 @@ LM.saveAndRebuild = function (lmSet) {
 };
 
 
-LM.Mesh = function (mesh, filename) {
+LM.Mesh = function (mesh, modelId) {
 
     function toJSON () {
         var trilist = _.map(mesh.geometry.faces, function (face) {
@@ -466,13 +468,14 @@ LM.Mesh = function (mesh, filename) {
         return {
             points: points,
             trilist: trilist,
-            filename: filename
+            modelId: modelId
         };
     }
 
     return {
+        getModelId: function () {return modelId;},
         toJSON: toJSON,
-        getMesh: function() {return mesh;}
+        getMesh: function () {return mesh;}
     }
 };
 
@@ -484,6 +487,10 @@ LM.MeshFromJSON = function (obj) {
     _.each(obj.trilist, function (tl) {
         geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
     });
+    // TODO fix material (smoothing?)
     var material = new THREE.MeshPhongMaterial();
-    return LM.Mesh(new THREE.Mesh(geometry, material), obj.filename);
+    return LM.Mesh(new THREE.Mesh(geometry, material), obj.modelId);
 };
+
+// TODO sort out namespacing
+// TODO support textured meshes

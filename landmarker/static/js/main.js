@@ -23,6 +23,8 @@ var keyboard = {
 
 var viewport = new Viewport(signals, keyboard, $('.viewport'));
 
+
+// TODO rm these for server mode to start with
 document.addEventListener('dragover', function (event) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
@@ -89,20 +91,18 @@ document.addEventListener('keyup', function (event) {
     }
 }, false);
 
-// TODO remove this
-// add a basic LM set to get started
-var lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1]);
-
-var meshL;
+var meshL, lmSet;
 
 signals.meshChanged.add( function (mesh) {
     // get a handle on the current mesh
     meshL = mesh;
     // make a fresh LM set
-    lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1]);
+    lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1],
+                           mesh.getModelId());
     console.log("clearing landmarks for new face");
     signals.landmarkSetChanged.dispatch(lmSet);
 });
 
 var restURL = "http://localhost:5000/";
-var restClient = RIO.RESTClient(restURL);
+var restClient = RIO.RESTClient(restURL, 'ibug68');
+restClient.retrieveMesh('ioannis_1');

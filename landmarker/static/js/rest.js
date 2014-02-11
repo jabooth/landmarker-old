@@ -1,12 +1,13 @@
 
 var RIO = {};
 
-RIO.RESTClient = function (restURL) {
+RIO.RESTClient = function (restURL, aLandmarkId) {
     console.log("about to json");
 
     var modelURL = restURL + "models/";
     var landmarkURL = restURL + "landmarks/";
     var modelList;
+    var landmarkId = aLandmarkId;
     var landmarkList;
     updateModels();
     updateLandmarks();
@@ -15,8 +16,12 @@ RIO.RESTClient = function (restURL) {
         return modelList;
     }
 
+    function landmarkIdURL () {
+        return landmarkURL + landmarkId + '/';
+    }
+
     function updateLandmarks() {
-        $.get(landmarkURL, function (lmListRes) {
+        $.get(landmarkIdURL(), function (lmListRes) {
             landmarkList = lmListRes;
         });
     }
@@ -36,7 +41,7 @@ RIO.RESTClient = function (restURL) {
     }
 
     function saveLandmarks(model_id, lms) {
-        var id_url = landmarkURL + model_id;
+        var id_url = landmarkIdURL() + model_id;
         $.ajax({
             url: id_url,
             contentType: 'application/json',
@@ -45,16 +50,26 @@ RIO.RESTClient = function (restURL) {
             processData: false,
             data: JSON.stringify(lms),
             success: function(result) {
-                console.log("YYYYEARR");
+                console.log("success posting LMs");
             }
         });
     }
 
+    function getLandmarkId () {
+        return landmarkId;
+    }
 
+    function setLandmarkId (newLandmarkId) {
+        landmarkId = newLandmarkId;
+    }
 
     return {
         listModels: listModels,
         retrieveMesh: retrieveMesh,
-        saveLandmarks: saveLandmarks
+        saveLandmarks: saveLandmarks,
+        getLandmarkId: getLandmarkId,
+        setLandmarkId: setLandmarkId
     };
 };
+
+// TODO iterate through available meshes (caching?)

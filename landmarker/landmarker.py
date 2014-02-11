@@ -47,9 +47,10 @@ class ModelList(Resource):
 
 class Landmark(Resource):
 
-    def put(self, model_id):
+    def put(self, lm_id, model_id):
         # TODO validate data
-        fp = os.path.join(config.landmark_dir, model_id + '.json')
+        lm_dir = os.path.join(config.landmark_dir, lm_id)
+        fp = os.path.join(lm_dir, model_id + '.json')
         with open(fp, 'wb') as f:
             json.dump(request.json, f, sort_keys=True, indent=4,
                       separators=(',', ': '))
@@ -58,14 +59,14 @@ class Landmark(Resource):
 
 class LandmarkList(Resource):
 
-    def get(self):
-        return os.listdir(config.landmark_dir)
+    def get(self, lm_id):
+        return os.listdir(os.path.join(config.landmark_dir, lm_id))
 
 
 api.add_resource(ModelList, '/models/')
 api.add_resource(Model, '/models/<string:model_id>')
-api.add_resource(LandmarkList, '/landmarks/')
-api.add_resource(Landmark, '/landmarks/<string:model_id>')
+api.add_resource(LandmarkList, '/landmarks/<string:lm_id>')
+api.add_resource(Landmark, '/landmarks/<string:lm_id>/<string:model_id>')
 
 
 # @app.route('/static')
@@ -74,3 +75,7 @@ api.add_resource(Landmark, '/landmarks/<string:model_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# TODO PyBug landmarks should be JSON-ible
+# TODO define spec carefully and template concept
+# TODO implement landmarkedmodel endpoint
