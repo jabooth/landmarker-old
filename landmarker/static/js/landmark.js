@@ -487,7 +487,13 @@ LM.MeshFromJSON = function (obj) {
     _.each(obj.trilist, function (tl) {
         geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
     });
-    // TODO fix material (smoothing?)
+    geometry.mergeVertices();
+    geometry.computeCentroids();
+    // needed for lighting to work
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    // default to Phong lighting
     var material = new THREE.MeshPhongMaterial();
     return LM.Mesh(new THREE.Mesh(geometry, material), obj.modelId);
 };

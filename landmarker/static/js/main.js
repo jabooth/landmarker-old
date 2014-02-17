@@ -97,12 +97,12 @@ signals.meshChanged.add( function (mesh) {
     // get a handle on the current mesh
     meshL = mesh;
     // make a fresh LM set
-    lmSet = LM.LandmarkSet(['Z', 'PTS', 'a', 'l_ete'], [4, 2, 3, 1],
+    lmSet = LM.LandmarkSet(['PTS'], [34],
                            mesh.getModelId());
     console.log("clearing landmarks for new face");
     signals.landmarkSetChanged.dispatch(lmSet);
 });
 
 var restURL = "http://localhost:5000/";
-var restClient = RIO.RESTClient(restURL, 'ibug68');
-restClient.retrieveMesh('ioannis_1');
+var restClient = RIO.RESTClient(restURL, 'icip34');
+restClient.retrieveMesh('James_001_0005');

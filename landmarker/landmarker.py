@@ -3,7 +3,7 @@ import os
 from os import path
 
 from flask import Flask, request
-from flask.ext.restful import reqparse, abort, Api, Resource
+from flask.ext.restful import abort, Api, Resource
 
 import pybug.io as pio
 
@@ -26,7 +26,7 @@ api = Api(app)
 
 # import all the models we want to serve (they are static)
 models = list(pio.import_meshes(os.path.join(config.model_dir, '*')))
-models = {path.splitext(path.basename(m.filepath))[0]: m.toJSON()
+models = {path.splitext(path.basename(m.filepath))[0]: m.tojson()
           for m in models}
 
 
