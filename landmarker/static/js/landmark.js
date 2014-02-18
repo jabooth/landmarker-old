@@ -227,8 +227,8 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     }
 
     function toJSON() {
-        var tmp = {}
-        tmp[getLabel()] = landmarks;
+        var tmp = {};
+        tmp[getLabel()] = {points: landmarks};
         return tmp;
     }
 
