@@ -26,8 +26,7 @@ api = Api(app)
 
 # import all the models we want to serve (they are static)
 models = list(pio.import_meshes(os.path.join(config.model_dir, '*')))
-models = {path.splitext(path.basename(m.filepath))[0]: m.tojson()
-          for m in models}
+models = {m.ioinfo.filename: m.tojson() for m in models}
 
 
 class Model(Resource):
