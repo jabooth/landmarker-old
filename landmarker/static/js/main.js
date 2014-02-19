@@ -105,4 +105,4 @@ signals.meshChanged.add( function (mesh) {
 
 var restURL = "http://localhost:5000/";
 var restClient = RIO.RESTClient(restURL, 'icip34');
-restClient.retrieveMesh('James_001_0005');
+restClient.retrieveFirstMesh();

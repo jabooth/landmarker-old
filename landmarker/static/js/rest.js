@@ -20,24 +20,50 @@ RIO.RESTClient = function (restURL, aLandmarkId) {
         return landmarkURL + landmarkId + '/';
     }
 
-    function updateLandmarks() {
+    function updateLandmarks(f) {
         $.get(landmarkIdURL(), function (lmListRes) {
             landmarkList = lmListRes;
+            if (f !== undefined) {
+                f(lmListRes);
+            }
         });
     }
 
-    function updateModels() {
+    function updateModels(f) {
         $.get(modelURL, function (modelListRes) {
             modelList = modelListRes;
+            if (f !== undefined) {
+                f(modelListRes);
+            }
         });
+    }
+
+    function retrieveFirstMesh() {
+        updateModels(function (modelListRes) {
+            retrieveMesh(modelListRes[0]);
+        })
     }
 
     function retrieveMesh(model_id) {
         var id_url = modelURL + model_id;
         $.getJSON(id_url, function (obj) {
-            var mesh = LM.MeshFromJSON(obj)
+            var mesh = LM.MeshFromJSON(obj, model_id)
             signals.meshChanged.dispatch(mesh);
         });
+    }
+
+    function retrieveMeshAfter(model_id) {
+        var i = modelList.indexOf(model_id)
+        if (i != -1 && i < modelList.length - 1) {
+                retrieveMesh(modelList[i + 1]);
+            }
+    }
+
+    function retrieveMeshBefore(model_id) {
+        var i = modelList.indexOf(model_id)
+        if (i != -1 && i > 0) {
+            retrieveMesh(modelList[i - 1]);
+        }
     }
 
     function saveLandmarks(model_id, lms) {
@@ -66,6 +92,9 @@ RIO.RESTClient = function (restURL, aLandmarkId) {
     return {
         listModels: listModels,
         retrieveMesh: retrieveMesh,
+        retrieveFirstMesh: retrieveFirstMesh,
+        retrieveMeshAfter: retrieveMeshAfter,
+        retrieveMeshBefore: retrieveMeshBefore,
         saveLandmarks: saveLandmarks,
         getLandmarkId: getLandmarkId,
         setLandmarkId: setLandmarkId

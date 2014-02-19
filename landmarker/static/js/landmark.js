@@ -468,7 +468,6 @@ LM.Mesh = function (mesh, modelId) {
         return {
             points: points,
             trilist: trilist,
-            modelId: modelId
         };
     }
 
@@ -479,7 +478,7 @@ LM.Mesh = function (mesh, modelId) {
     }
 };
 
-LM.MeshFromJSON = function (obj) {
+LM.MeshFromJSON = function (obj, modelId) {
     var geometry = new THREE.Geometry();
     _.each(obj.points, function (v) {
         geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]));
@@ -495,7 +494,7 @@ LM.MeshFromJSON = function (obj) {
     geometry.computeBoundingSphere();
     // default to Phong lighting
     var material = new THREE.MeshPhongMaterial();
-    return LM.Mesh(new THREE.Mesh(geometry, material), obj.modelId);
+    return LM.Mesh(new THREE.Mesh(geometry, material), modelId);
 };
 
 // TODO sort out namespacing
