@@ -98,7 +98,7 @@ signals.meshChanged.add( function (mesh) {
     meshL = mesh;
     // make a fresh LM set
     lmSet = LM.LandmarkSet(['PTS'], [34],
-                           mesh.getModelId());
+        mesh.getModelId());
     console.log("clearing landmarks for new face");
     signals.landmarkSetChanged.dispatch(lmSet);
 });
@@ -106,3 +106,26 @@ signals.meshChanged.add( function (mesh) {
 var restURL = "http://localhost:5000/";
 var restClient = RIO.RESTClient(restURL, 'icip34');
 restClient.retrieveFirstMesh();
+
+$(function () {
+    $("#nextMesh").click(function () {
+        restClient.retrieveMeshAfter(meshL.getModelId());
+    });
+    $("#previousMesh").click(function () {
+        restClient.retrieveMeshBefore(meshL.getModelId());
+    });
+    $("#saveLandmarks").click(function () {
+        restClient.saveLandmarks(meshL.getModelId(), lmSet);
+    });
+    $('#undo').click(function() {
+        lmSet.undo();
+        signals.landmarkSetChanged.dispatch(lmSet);
+    })
+    $('#redo').click(function() {
+        lmSet.redo();
+        signals.landmarkSetChanged.dispatch(lmSet);
+    })
+    $('#resetView').click(function() {
+        signals.resetView.dispatch();
+    })
+});

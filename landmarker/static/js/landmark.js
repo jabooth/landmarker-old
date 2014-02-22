@@ -471,10 +471,13 @@ LM.Mesh = function (mesh, modelId) {
         };
     }
 
+
+
     return {
         getModelId: function () {return modelId;},
         toJSON: toJSON,
-        getMesh: function () {return mesh;}
+        getMesh: function () {return mesh;},
+        landmarkRadius: mesh.geometry.boundingSphere.radius / 100
     }
 };
 

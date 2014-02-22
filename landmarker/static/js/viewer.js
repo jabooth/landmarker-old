@@ -283,9 +283,11 @@ var Viewport = function (signals, keyboard, $dom) {
     });
 
     signals.windowResize.add(function () {
-        camera.aspect = dom.offsetWidth / dom.offsetHeight;
+        var w = $("#viewportContainer").width();
+        var h = $(window).height()
+        camera.aspect = w/h;
         camera.updateProjectionMatrix();
-        renderer.setSize(dom.offsetWidth, dom.offsetHeight);
+        renderer.setSize(w, h);
         render();
     });
 
@@ -323,7 +325,8 @@ var Viewport = function (signals, keyboard, $dom) {
         for (i = 0; i < visibleLms.length; i++) {
             lmInfo = visibleLms[i];
             var p = lmInfo.landmark.getPoint();
-            var sphere = createSphere(p, 2, lmInfo.landmark.isSelected());
+            var sphere = createSphere(p, mesh.landmarkRadius,
+                                      lmInfo.landmark.isSelected());
             landmarkSymbols.push(sphere);
             scene.add(sphere);
             landmarkSymbolToLandmark[sphere.id] = lmInfo;
