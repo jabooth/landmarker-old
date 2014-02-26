@@ -1,0 +1,70 @@
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    margin: 0;
+}
+
+.App {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: row;
+}
+
+.App-Viewport {
+    flex: 2;
+    background: blue;
+}
+
+.App-Sidebar {
+    flex: 1;
+    align-items: center;
+}
+
+.Sidebar {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    text-align: center;
+}
+
+.Sidebar-item {
+    flex: 1;
+}
+
+.Sidebar-button {
+    flex: 1 auto;
+}
+
+.Sidebar-row {
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+}
+
+.Sidebar-row-item {
+    flex: 1;
+}
+
+Button {
+    border: none;
+    width: 100%;
+    height: 30px;
+    background: cornflowerblue;
+    color: white;
+}
+
+.Save {
+    background: forestgreen;
+}
+
+.Revert {
+    background: red;
+}
+
+Button:active {
+    background: black;
+}
