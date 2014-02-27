@@ -283,8 +283,8 @@ var Viewport = function (signals, keyboard, $dom) {
     });
 
     signals.windowResize.add(function () {
-        var w = $("#viewportContainer").width();
-        var h = $(window).height()
+        var w = $(".App-Viewport").width();
+        var h = $(window).height();
         camera.aspect = w/h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);

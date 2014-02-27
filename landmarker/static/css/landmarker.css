@@ -46,6 +46,7 @@ body {
     flex-direction: row;
     text-align: center;
     justify-content: space-around;
+    align-items: center;
 }
 
 .Sidebar-row-item {
@@ -77,6 +78,11 @@ button:active {
     width: 100%;
 }
 
+.Button-LabelSelect {
+    background: #0A4EB2;
+    color: white;
+}
+
 .Button-Save {
     color: white;
     background: #5FB632;
@@ -101,7 +107,6 @@ button:active {
 .MeshCount {
     color: black;
     background: white;
-    margin-top: 8px;
     margin-right: 16px;
     font-size: x-large;
     text-align: right;
@@ -111,14 +116,11 @@ button:active {
     color: #B91109;
     font-size: large;
     font-weight: bold;
-    margin-top: 8px;
-    margin-bottom: 8px;
     margin-left: 16px;
     text-align: left;
 }
 
 .LabelCount {
-    margin-top: 8px;
     margin-right: 16px;
     font-size: large;
     text-align: right;
@@ -151,4 +153,20 @@ table {
 .Table-Cell-Header {
     background: #0A4EB2;
     color: white;
+}
+
+
+.App-Viewport-Toolbar {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+}
+
+.Toolbar {
+    z-index: 1;
+}
+
+.Toolbar-Spacer {
+    flex: 1;
 }
