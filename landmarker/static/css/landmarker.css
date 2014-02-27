@@ -129,6 +129,7 @@ button:active {
 td {
     padding-top: 6px;
     padding-bottom: 6px;
+    cursor: pointer;
 }
 
 th {
@@ -150,6 +151,10 @@ table {
     background: #DCDEE2;
 }
 
+.Table-Cell-Selected {
+    font-weight: bold;
+}
+
 .Table-Cell-Header {
     background: #0A4EB2;
     color: white;
@@ -169,4 +174,49 @@ table {
 
 .Toolbar-Spacer {
     flex: 1;
+}
+
+.Overlay-Background {
+    position: fixed;
+    background: rgba(54, 25, 25, .5);
+    z-index: 2;
+    top:0;
+    left:0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+}
+
+.Overlay {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: row;
+    z-index: 3;
+    position: absolute;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+}
+
+.Overlay-Sheet {
+    flex: 1;
+    height: 80vh;
+    max-width: 50vw;
+    text-align: center;
+    background: white;
+}
+
+input, textarea, select{font-family:inherit;}
+
+input {
+    font-size: 150%;
+}
+
+* {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: -moz-none;
+    -o-user-select: none;
+    user-select: none;
 }

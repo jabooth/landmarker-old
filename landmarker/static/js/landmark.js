@@ -199,7 +199,10 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     function firstEmptyLandmark() {
         for (var i = 0; i < nLandmarks(); i++) {
             if (landmarks[i].isEmpty()) {
-                return landmarks[i]
+                return {
+                    lm: landmarks[i],
+                    i: i
+                };
             }
         }
         // there are no empty landmarks
@@ -320,14 +323,20 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
     function insertNewLandmark(v) {
         var activeGroup = getActiveGroup();
         if (activeGroup.nEmptyLandmarks() !== 0) {
-            var nextLm = activeGroup.firstEmptyLandmark()
+            var insertResult = activeGroup.firstEmptyLandmark();
+            var nextLm = insertResult.lm;
+            var i = insertResult.i;
             nextLm.setPoint(v);
             if (activeGroup.nEmptyLandmarks() == 0) {
                 // depleted this group! advance the active group on.
                 console.log("Filled group! Advancing. WARNING - not implemented yer.");
                 // TODO actually advance here
             }
-            return nextLm;
+            return {lm: nextLm,
+                    i: i,
+                    group: activeGroup
+            }
+
         }
         return null;
     }

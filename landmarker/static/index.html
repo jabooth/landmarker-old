@@ -8,6 +8,13 @@
 
 <body>
 
+<div class="Overlay-Background"></div>
+<div class="Overlay">
+    <div class="Overlay-Sheet">
+        <label for="filter"></label>
+        <input type="text" class="text-input" id="filter" value="" />
+    </div>
+</div>
 <div class="App" style="height: 100%;">
     <div class="App-Viewport">
         <div class="viewport" style="position: fixed;"></div>
@@ -31,7 +38,8 @@
             </div>
             <div class="Sidebar-row">
                 <div class="Sidebar-row-item">
-                    <button class="Button-Save">Save</button>
+                    <button class="Button-Save"
+                            id="saveLandmarks">Save</button>
                 </div>
                 <div class="Sidebar-row-item">
                     <button class="Button-Revert">Revert</button>
@@ -42,9 +50,6 @@
                 <button class="Button-LabelSelect">r_eye</button>
                 <button class="Button-LabelSelect">mouth</button>
                 <button class="Button-LabelSelect">nose</button>
-                <button class="Button-LabelSelect">l_eyebrow</button>
-                <button class="Button-LabelSelect">chin</button>
-                <button class="Button-LabelSelect">r_eyebrow</button>
             </div>
             <div class="Sidebar-item">
                 <div class="Sidebar-row">
@@ -70,92 +75,8 @@
                         <td>9.25</td>
                         <td>-3.46</td>
                     </tr>
-                    <tr class="Table-Row-Odd">
+                    <tr class="Table-Row-Odd Table-Row-Selected">
                         <td class="Table-Cell Table-Cell-Count">2</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">3</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">4</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                    <td class="Table-Cell Table-Cell-Count">1</td>
-                    <td>3.53</td>
-                    <td>9.25</td>
-                    <td>-3.46</td>
-                </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">2</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">3</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">4</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">1</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">2</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">3</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">4</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">1</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">2</td>
-                        <td>-13.53</td>
-                        <td>4.25</td>
-                        <td>-5.46</td>
-                    </tr>
-                    <tr>
-                        <td class="Table-Cell Table-Cell-Count">3</td>
-                        <td>3.53</td>
-                        <td>9.25</td>
-                        <td>-3.46</td>
-                    </tr>
-                    <tr class="Table-Row-Odd">
-                        <td class="Table-Cell Table-Cell-Count">4</td>
                         <td>-13.53</td>
                         <td>4.25</td>
                         <td>-5.46</td>
@@ -166,15 +87,34 @@
                 <div class="Sidebar-row-spacer">
                 </div>
                 <div class="Sidebar-row-item">
-                    <button class="Button-Basic">Previous</button>
+                    <button class="Button-Basic"
+                            id="previousMesh">Previous</button>
                 </div>
                 <div class="Sidebar-row-item">
-                    <button class="Button-Basic">Next</button>
+                    <button class="Button-Basic" id="nextMesh">Next</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script id="trTemplateEven" type="text/template">
+    <tr id="lm<%= i %>">
+        <td class="Table-Cell Table-Cell-Count"><%= i %></td>
+        <td class="x"><%= x %></td>
+        <td class="y"><%= y %></td>
+        <td class="z"><%= z %></td>
+    </tr>
+</script>
+
+<script id="trTemplateOdd" type="text/template">
+    <tr class="Table-Row-Odd" id="lm<%= i %>">
+        <td class="Table-Cell Table-Cell-Count"><%= i %></td>
+        <td class="x"><%= x %></td>
+        <td class="y"><%= y %></td>
+        <td class="z"><%= z %></td>
+    </tr>
+</script>
 
 
 <script src="js/libs/three.js"></script>

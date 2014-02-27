@@ -184,12 +184,13 @@ var Viewport = function (signals, keyboard, $dom) {
                 if (pressedDownOn === PDO.mesh) {
                     //  a click on mesh
                     p = intersectionsWithMesh[0].point;
-                    lm = landmarkSet.insertNewLandmark(p);
+                    var status = landmarkSet.insertNewLandmark(p);
+                    lm = status.lm;
                     lmSet.getActiveGroup().deselectAll();
                     lm.select();
                     lmSet.snapshotGroup();
                     // TODO should this be a whole group (are we tracking sel)
-                    signals.landmarkChanged.dispatch(lm);
+                    signals.landmarkChanged.dispatch(lm, status.i, status.group);
                     render();
                 } else if (pressedDownOn === PDO.nothing) {
                     // a click on nothing - deselect all
