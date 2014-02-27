@@ -1,7 +1,7 @@
 
-var RIO = {};
+window.lmjs = window.lmjs || {};
 
-RIO.RESTClient = function (restURL, aLandmarkId) {
+window.lmjs.RESTClient = function (restURL, aLandmarkId) {
     console.log("about to json");
 
     var modelURL = restURL + "models/";
@@ -47,7 +47,7 @@ RIO.RESTClient = function (restURL, aLandmarkId) {
     function retrieveMesh(model_id) {
         var id_url = modelURL + model_id;
         $.getJSON(id_url, function (obj) {
-            var mesh = LM.MeshFromJSON(obj, model_id)
+            var mesh = window.lmjs.mesh.MeshFromJSON(obj, model_id)
             signals.meshChanged.dispatch(mesh);
         });
     }

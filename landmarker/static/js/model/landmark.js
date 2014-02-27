@@ -2,10 +2,13 @@
  * Created by jab08 on 19/01/2014.
  */
 // TODO make some methods hidden (just between these three objects)
-LM = {};
+
+window.lmjs = window.lmjs || {};
+
+window.lmjs.lm = {};
 
 // v == THREE.Vector3
-LM.Landmark = function (vector3) {
+window.lmjs.lm.Landmark = function (vector3) {
 
     var point = null;
     var snapshottedPoint = null;
@@ -57,7 +60,7 @@ LM.Landmark = function (vector3) {
     }
 
     function clone() {
-        var newLM = LM.Landmark();
+        var newLM = window.lmjs.lm.Landmark();
         if (snapshottedPoint !== null) {
             // have to push this snapshot back onto the stack
             newLM.setPoint(snapshottedPoint);
@@ -128,14 +131,14 @@ LM.Landmark = function (vector3) {
     }
 };
 
-LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
+window.lmjs.lm.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     var landmarks = [];
     var i;
     for (i = 0; i < nLandmarksOnLabel; i++) {
         if (values !== undefined) {
-            landmarks.push(LM.Landmark(values[i]));
+            landmarks.push(window.lmjs.lm.Landmark(values[i]));
         } else {
-            landmarks.push(LM.Landmark());
+            landmarks.push(window.lmjs.lm.Landmark());
         }
     }
 
@@ -222,7 +225,7 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     }
 
     function clone() {
-        var newLMGroup = LM.LandmarkGroup(label, nLandmarksOnLabel);
+        var newLMGroup = window.lmjs.lm.LandmarkGroup(label, nLandmarksOnLabel);
         for (var i = 0; i < nLandmarksOnLabel; i++) {
             newLMGroup.setLandmark(i, landmarks[i].clone());
         }
@@ -253,7 +256,8 @@ LM.LandmarkGroup = function(label, nLandmarksOnLabel, values) {
     }
 };
 
-LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
+window.lmjs.lm.LandmarkSet = function (labels, nLandmarksPerLabel,
+                                       modelId, groupedValues) {
     if (labels.length !== nLandmarksPerLabel.length) {
         throw("Labels and nLandmarksPerLabel need to be the same length");
     }
@@ -264,7 +268,7 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
         if (groupedValues !== undefined) {
             values = groupedValues[i];
         }
-        landmarkGroups[labels[i]] = LM.LandmarkGroup(labels[i],
+        landmarkGroups[labels[i]] = window.lmjs.lm.LandmarkGroup(labels[i],
             nLandmarksPerLabel[i], values);
     }
 
@@ -274,7 +278,7 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
     var initalState = {};  // copy of the initial state of this landmark group
     // TODO consider how a landmark set will be initialized from JSON instance
     for (i = 0; i < labels.length; i++) {
-        initalState[labels[i]] = LM.LandmarkGroup(labels[i],
+        initalState[labels[i]] = window.lmjs.lm.LandmarkGroup(labels[i],
             nLandmarksPerLabel[i]);
     }
 
@@ -439,7 +443,7 @@ LM.LandmarkSet = function (labels, nLandmarksPerLabel, modelId, groupedValues) {
     }
 };
 
-LM.LandmarkSetFromJSON = function (obj) {
+window.lmjs.lm.LandmarkSetFromJSON = function (obj) {
     var groups = obj.groups;
     var labels = _.map(groups, function (group, label) {
         return label;
@@ -452,62 +456,13 @@ LM.LandmarkSetFromJSON = function (obj) {
     var nPointsPerGroup = _.map(groupedPoints, function (points) {
        return points.length;
     });
-    return LM.LandmarkSet(labels, nPointsPerGroup, groupedPoints, obj.modelId);
+    return window.lmjs.lm.LandmarkSet(labels, nPointsPerGroup, groupedPoints, obj.modelId);
 };
 
 
-LM.saveAndRebuild = function (lmSet) {
+window.lmjs.lm.saveAndRebuild = function (lmSet) {
     var x = JSON.stringify(lmSet);
     var obj = JSON.parse(x);
-    return LM.LandmarkSetFromJSON(obj);
+    return window.lmjs.lm.LandmarkSetFromJSON(obj);
 };
 
-
-LM.Mesh = function (mesh, modelId) {
-
-    function toJSON () {
-        var trilist = _.map(mesh.geometry.faces, function (face) {
-            return [face.a, face.b, face.c];
-        });
-
-        var points = _.map(mesh.geometry.vertices, function (v) {
-            return [v.x, v.y, v.z];
-        });
-
-        return {
-            points: points,
-            trilist: trilist,
-        };
-    }
-
-
-
-    return {
-        getModelId: function () {return modelId;},
-        toJSON: toJSON,
-        getMesh: function () {return mesh;},
-        landmarkRadius: mesh.geometry.boundingSphere.radius / 100
-    }
-};
-
-LM.MeshFromJSON = function (obj, modelId) {
-    var geometry = new THREE.Geometry();
-    _.each(obj.points, function (v) {
-        geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]));
-    });
-    _.each(obj.trilist, function (tl) {
-        geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
-    });
-    geometry.mergeVertices();
-    geometry.computeCentroids();
-    // needed for lighting to work
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    geometry.computeBoundingSphere();
-    // default to Phong lighting
-    var material = new THREE.MeshPhongMaterial();
-    return LM.Mesh(new THREE.Mesh(geometry, material), modelId);
-};
-
-// TODO sort out namespacing
-// TODO support textured meshes

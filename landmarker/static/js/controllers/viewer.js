@@ -248,7 +248,7 @@ var Viewport = function (signals, keyboard, $dom) {
 
     // controls need to be added *after* main logic,
     // otherwise cameraControls.enabled doesn't work.
-    var cameraControls = new JAB.CameraController(camera, dom);
+    var cameraControls = new window.lmjs.CameraController(camera, dom);
     // when the camera updates, render
     cameraControls.addEventListener('change', function () {
         render();

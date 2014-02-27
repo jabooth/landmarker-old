@@ -7,6 +7,8 @@
  * @author WestLangley / http://github.com/WestLangley
  */
 
+window.lmjs = window.lmjs || {};
+
 /**
  * Controller for handling basic camera events on a Landmarker.
  *
@@ -34,7 +36,7 @@
  * @namespace JAB
  * @constructor
  */
-JAB.CameraController = function (camera, domElement) {
+window.lmjs.CameraController = function (camera, domElement) {
 
     // if no element is provided, fall back to document
     domElement = (domElement !== undefined) ? domElement : document;
@@ -207,4 +209,5 @@ JAB.CameraController = function (camera, domElement) {
     domElement.addEventListener('touchmove', touchMove, false);
 };
 
-JAB.CameraController.prototype = Object.create(THREE.EventDispatcher.prototype);
+window.lmjs.CameraController.prototype = Object.create(
+    THREE.EventDispatcher.prototype);
