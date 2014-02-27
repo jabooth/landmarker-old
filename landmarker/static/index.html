@@ -15,19 +15,19 @@
     <div class="App-Sidebar">
         <div class="Sidebar">
             <div class="Sidebar-row">
-                <div class="Sidebar-row-item">
+                <button class="Sidebar-row-item MeshName">
                     patrick_01
-                </div>
-                <div class="Sidebar-row-item">
-                    01/112
-                </div>
+                </button>
+                <button class="Sidebar-row-item MeshCount">
+                    001/112
+                </button>
             </div>
             <div class="Sidebar-row">
                 <div class="Sidebar-row-item">
-                    <button class="Save">Save</button>
+                    <button class="Button-Save">Save</button>
                 </div>
                 <div class="Sidebar-row-item">
-                    <button class="Revert">Revert</button>
+                    <button class="Button-Revert">Revert</button>
                 </div>
             </div>
             <div class="Sidebar-item">
@@ -35,42 +35,42 @@
             </div>
             <div class="Sidebar-item">
                 <div class="Sidebar-row">
-                    <div class="Sidebar-row-item">
-                        landmark row item
-                    </div>
-                    <div class="Sidebar-row-item">
+                    <button class="Sidebar-row-item LabelName">
+                        nose
+                    </button>
+                    <button class="Sidebar-row-item LabelCount">
                         05/06
-                    </div>
+                    </button>
                 </div>
-                <table width="100%">
+                <table>
                     <thead>
                     <tr>
-                        <th>#</th>
-                        <th>x</th>
-                        <th>y</th>
-                        <th>z</th>
+                        <th class="Table-Cell Table-Cell-Header"></th>
+                        <th class="Table-Cell Table-Cell-Header">x</th>
+                        <th class="Table-Cell Table-Cell-Header">y</th>
+                        <th class="Table-Cell Table-Cell-Header">z</th>
                     </tr>
                     </thead>
                     <tr>
-                        <td>1</td>
+                        <td class="Table-Cell Table-Cell-Count">1</td>
                         <td>3.53</td>
                         <td>9.25</td>
                         <td>-3.46</td>
                     </tr>
-                    <tr>
-                        <td>2</td>
+                    <tr class="Table-Row-Odd">
+                        <td class="Table-Cell Table-Cell-Count">2</td>
                         <td>-13.53</td>
                         <td>4.25</td>
                         <td>-5.46</td>
                     </tr>
                     <tr>
-                        <td>3</td>
+                        <td class="Table-Cell Table-Cell-Count">3</td>
                         <td>3.53</td>
                         <td>9.25</td>
                         <td>-3.46</td>
                     </tr>
-                    <tr>
-                        <td>4</td>
+                    <tr class="Table-Row-Odd">
+                        <td class="Table-Cell Table-Cell-Count">4</td>
                         <td>-13.53</td>
                         <td>4.25</td>
                         <td>-5.46</td>
@@ -78,11 +78,13 @@
                 </table>
             </div>
             <div class="Sidebar-row">
-                <div class="Sidebar-row-item">
-                    <button>Previous</button>
+                <div class="Sidebar-row-spacer">
                 </div>
                 <div class="Sidebar-row-item">
-                    <button>Next</button>
+                    <button class="Button-Basic">Previous</button>
+                </div>
+                <div class="Sidebar-row-item">
+                    <button class="Button-Basic">Next</button>
                 </div>
             </div>
         </div>
