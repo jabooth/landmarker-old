@@ -8,13 +8,14 @@ define(['jquery', 'underscore'], function ($, _) {
         var _lmSet;
         var trOddTemplate = _.template($("#trTemplateOdd").html());
         var trEvenTemplate = _.template($("#trTemplateEven").html());
+        var tableTemplate = _.template($("#tableTemplate").html());
 
         function tableForLandmarkGroup(lmGroup) {
             var table = "";
             for (var i = 0; i < lmGroup.nLandmarks(); i++) {
                 table += tableRowForLandmark(lmGroup.getLandmark(i), i);
             }
-            return table;
+            return tableTemplate({table: table});
         }
 
         function tableRowForLandmark(lm, i) {
@@ -48,7 +49,9 @@ define(['jquery', 'underscore'], function ($, _) {
 
         function updateTable(lmGroup) {
             clearTable();
-            $("tbody").append(tableForLandmarkGroup(lmGroup));
+            $('.Button-LandmarkGroup-Active').removeClass('Button-LandmarkGroup-Active');
+            $('.Button-LandmarkGroup#' + lmGroup.getLabel()).addClass('Button-LandmarkGroup-Active');
+            $('.Button-LandmarkGroup#' + lmGroup.getLabel()).after(tableForLandmarkGroup(lmGroup));
             updateLandmarkLabelAndCount(lmGroup);
         }
 
@@ -100,8 +103,12 @@ define(['jquery', 'underscore'], function ($, _) {
             });
         });
 
+        signals.meshChanged.add(function (mesh) {
+           $('.MeshName').html(mesh.getModelId());
+        });
+
         function clearTable() {
-            $("tbody tr").remove();
+            $("table").remove();
         }
 
         return {

@@ -89,9 +89,15 @@ table {
     text-align: center;
 }
 
-/* Each item has equal weight */
-.Sidebar-item {
+/* The Landmarks panel takes up the rest of the room */
+.Sidebar-LandmarksPanel {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.LandmarksPanel {
 }
 
 .Sidebar-button {
@@ -118,9 +124,14 @@ is itself a row flexbox */
     width: 100%;
 }
 
-.Button-LabelSelect {
-    background: #0A4EB2;
+.Button-LandmarkGroup {
+    background: #2D77C2;
     color: white;
+}
+
+.Button-LandmarkGroup-Active {
+    font-weight: bold;
+    background: #0A4EB2;
 }
 
 .Button-Save {
@@ -167,8 +178,9 @@ is itself a row flexbox */
 }
 
 .Table-Cell-Count {
-    background: #2D77C2;
+    background: #0A4EB2;
     color: white;
+    font-weight: bold;
 }
 
 .Table-Row-Odd {
