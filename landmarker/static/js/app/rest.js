@@ -2,6 +2,9 @@ define(["jquery", "./mesh"], function($, Mesh) {
 
     // TODO iterate through available meshes (caching?)
     function RESTClient(signals, restURL, aLandmarkId) {
+
+        "use strict";
+
         console.log("about to json");
 
         var modelURL = restURL + "models/";

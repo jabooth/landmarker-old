@@ -24,6 +24,8 @@
 
 define(['three'], function (THREE) {
 
+    "use strict";
+
      function CameraController (camera, domElement) {
 
         // API

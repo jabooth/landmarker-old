@@ -1,5 +1,7 @@
 define(['three', './camera'], function (THREE, Camera) {
 
+    "use strict";
+
     function Viewport(signals, keyboard, $dom) {
         // capture the raw dom
         var dom = $dom[0];

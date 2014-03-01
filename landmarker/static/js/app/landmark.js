@@ -3,6 +3,8 @@
 
 define(['underscore', 'three'], function (_, THREE) {
 
+    "use strict";
+
     function Landmark (vector3) {
 
         var point = null;
@@ -224,7 +226,9 @@ define(['underscore', 'three'], function (_, THREE) {
         function clone() {
             var newLMGroup = LandmarkGroup(label, nLandmarksOnLabel);
             for (var i = 0; i < nLandmarksOnLabel; i++) {
-                newLMGroup.setLandmark(i, landmarks[i].clone());
+                // TODO this is the only code that uses the exposed landmarks
+                // check here if any subtle bugs crop up
+                newLMGroup.landmarks[i] = landmarks[i].clone();
             }
             return newLMGroup;
         }
@@ -238,7 +242,7 @@ define(['underscore', 'three'], function (_, THREE) {
         return {
             getLabel: getLabel,
             getLandmark: getLandmark,
-            setLandmark: setLandmark,
+            landmarks: landmarks,
             nLandmarks: nLandmarks,
             nEmptyLandmarks: nEmptyLandmarks,
             nSelectedLandmarks: nSelectedLandmarks,
@@ -258,14 +262,14 @@ define(['underscore', 'three'], function (_, THREE) {
         if (labels.length !== nLandmarksPerLabel.length) {
             throw("Labels and nLandmarksPerLabel need to be the same length");
         }
-        var landmarkGroups = {};
+        var groups = {};
         var activeGroupLabel = labels[0];
         var values = undefined;
         for (var i = 0; i < labels.length; i++) {
             if (groupedValues !== undefined) {
                 values = groupedValues[i];
             }
-            landmarkGroups[labels[i]] = LandmarkGroup(labels[i],
+            groups[labels[i]] = LandmarkGroup(labels[i],
                 nLandmarksPerLabel[i], values);
         }
 
@@ -284,11 +288,11 @@ define(['underscore', 'three'], function (_, THREE) {
         }
 
         function getGroup(label) {
-            return landmarkGroups[label];
+            return groups[label];
         }
 
         function getActiveGroup() {
-            return landmarkGroups[activeGroupLabel];
+            return groups[activeGroupLabel];
         }
 
         function setActiveGroup(label) {
@@ -302,9 +306,9 @@ define(['underscore', 'three'], function (_, THREE) {
         function nonEmptyLandmarks() {
             var landmarks = [];  // the interesting lm's we want to return
             var label, i, lm, group;
-            for (label in landmarkGroups) {
-                if (landmarkGroups.hasOwnProperty(label)) {
-                    group = landmarkGroups[label];
+            for (label in groups) {
+                if (groups.hasOwnProperty(label)) {
+                    group = groups[label];
                     for (i = 0; i < group.nLandmarks(); i++) {
                         lm = group.getLandmark(i);
                         if (!lm.isEmpty()) {
@@ -343,9 +347,9 @@ define(['underscore', 'three'], function (_, THREE) {
         }
 
         function deselectAll() {
-            for (var label in landmarkGroups) {
-                if (landmarkGroups.hasOwnProperty(label)) {
-                    landmarkGroups[label].deselectAll();
+            for (var label in groups) {
+                if (groups.hasOwnProperty(label)) {
+                    groups[label].deselectAll();
                 }
             }
         }
@@ -379,7 +383,7 @@ define(['underscore', 'three'], function (_, THREE) {
             if (historyPtr == -1) {
                 // arrived at the initial state - restore all.
                 for (i = 0; i < labels.length; i++) {
-                    landmarkGroups[labels[i]] = initalState[labels[i]].clone();
+                    groups[labels[i]] = initalState[labels[i]].clone();
                 }
             } else {
                 // pointer is in the array somewhere - restore that state
@@ -402,13 +406,13 @@ define(['underscore', 'three'], function (_, THREE) {
 
         function restoreCurrentHistoryPtr() {
             var state = history[historyPtr];
-            landmarkGroups[state.label] = state.group.clone();
+            groups[state.label] = state.group.clone();
         }
 
         function toJSON() {
             // pull off the values
             // reduce over the list of groups, building amalgamating them together
-            var result = _.reduce(landmarkGroups, function (memo, group) {
+            var result = _.reduce(groups, function (memo, group) {
                 var groupJSON = group.toJSON();  // {'label': [lm1, ...]}
                 _.each(groupJSON, function (value, key) {
                     memo[key] = value; // reduction step
@@ -426,6 +430,7 @@ define(['underscore', 'three'], function (_, THREE) {
         return {
             getLabels: getLabels,
             getGroup: getGroup,
+            groups: groups,
             getActiveGroup: getActiveGroup,
             setActiveGroup: setActiveGroup,
             nGroups: nGroups,

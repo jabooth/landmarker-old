@@ -4,11 +4,14 @@
 
 define(['jquery', 'underscore'], function ($, _) {
 
+    "use strict";
+
     function Sidebar (signals, keyboard) {
         var _lmSet;
         var trOddTemplate = _.template($("#trTemplateOdd").html());
         var trEvenTemplate = _.template($("#trTemplateEven").html());
         var tableTemplate = _.template($("#tableTemplate").html());
+        var landmarkGroupTemplate = _.template($("#landmarkGroupLabel").html());
 
         function tableForLandmarkGroup(lmGroup) {
             var table = "";
@@ -70,6 +73,13 @@ define(['jquery', 'underscore'], function ($, _) {
             }
         }
 
+        function landmarkGroupButton(lmGroup) {
+            return landmarkGroupTemplate({
+                label: lmGroup.getLabel(),
+                labelFormatted: lmGroup.getLabel()
+            });
+        }
+
         signals.landmarkChanged.add(function (lm, i, lmGroup) {
             var id = "#lm" + i.toString();
             var p = xyziForLandmark(lm, i);
@@ -86,7 +96,16 @@ define(['jquery', 'underscore'], function ($, _) {
 
         signals.landmarkSetChanged.add(function (lmSet) {
             _lmSet = lmSet;  // get a handle on the lmSet..
+            $(".Sidebar-LandmarksPanel").html("") // clear the landmarks panel
+            var lmGroupButton;
+            // add on all the landmark group buttons
+            _.each(lmSet.groups, function (group, label) {
+                lmGroupButton = landmarkGroupButton(group);
+                $(".Sidebar-LandmarksPanel").append(lmGroupButton);
+            });
+            // update insert the table for the active group
             updateTable(lmSet.getActiveGroup());
+            // add the event listeners for the table
             $("tr").click(function () {
                 console.log('row clicked');
                 var i = parseInt(this.id.substring(2),10);

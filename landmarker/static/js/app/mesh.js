@@ -1,6 +1,8 @@
 
 define(["underscore", "three"], function(_, THREE) {
 
+        "use strict";
+
         function Mesh(mesh, modelId) {
 
             function toJSON () {

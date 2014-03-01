@@ -24,6 +24,9 @@ requirejs.config({
 requirejs(["jquery", "signals",
            "app/landmark", "app/rest", "app/viewport", "app/sidebar"],
     function($, SIGNALS, Landmark, Rest, Viewport, Sidebar) {
+
+        "use strict";
+
         $(function () {
             var app = {};
             app.signaller = {
@@ -99,7 +102,7 @@ requirejs(["jquery", "signals",
                 // get a handle on the current mesh
                 app.mesh = mesh;
                 // make a fresh LM set
-                app.lms = Landmark.LandmarkSet(['mouth'], [4],
+                app.lms = Landmark.LandmarkSet(['mouth', 'eyes', 'nose'], [4, 2, 5],
                     mesh.getModelId());
                 console.log("clearing landmarks for new face");
                 app.signaller.landmarkSetChanged.dispatch(app.lms);

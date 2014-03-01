@@ -47,10 +47,6 @@
                 </div>
             </div>
             <div class="Sidebar-LandmarksPanel">
-                <button class="Button-LandmarkGroup" id="l_eye">l_eye</button>
-                <button class="Button-LandmarkGroup" id="r_eye">r_eye</button>
-                <button class="Button-LandmarkGroup" id="mouth">mouth</button>
-                <button class="Button-LandmarkGroup" id="nose">nose</button>
             </div>
             <div class="Sidebar-row">
                 <div class="Sidebar-row-spacer">
@@ -97,6 +93,10 @@
         </thead>
         <%= table %>
     </table>
+</script>
+
+<script id="landmarkGroupLabel" type="text/template">
+<button class="Button-LandmarkGroup" id="<%= label %>"><%= labelFormatted %></button>
 </script>
 
 </body>
