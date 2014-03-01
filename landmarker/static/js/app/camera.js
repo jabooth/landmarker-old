@@ -20,18 +20,11 @@
  * Note that other more complex behaviors (selecting and repositioning landmarks
  * for instance) can disable the Controller temporarily with the enabled
  * property.
- *
- * @class CameraController
- * @namespace JAB
- * @constructor
  */
 
 define(['three'], function (THREE) {
 
      function CameraController (camera, domElement) {
-
-        // if no element is provided, fall back to document
-        domElement = (domElement !== undefined) ? domElement : document;
 
         // API
         this.enabled = true;  // false disconnects all event listeners
@@ -153,7 +146,7 @@ define(['three'], function (THREE) {
         }, false);
         domElement.addEventListener('mousedown', onMouseDown, false);
         domElement.addEventListener('mousewheel', onMouseWheel, false);
-        domElement.addEventListener('DOMMouseScroll', onMouseWheel, false); // ff
+        domElement.addEventListener('DOMMouseScroll', onMouseWheel, false);
 
         // touch
         var touch = new THREE.Vector3();

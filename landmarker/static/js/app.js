@@ -99,7 +99,7 @@ requirejs(["jquery", "signals",
                 // get a handle on the current mesh
                 app.mesh = mesh;
                 // make a fresh LM set
-                app.lms = Landmark.LandmarkSet(['PTS'], [34],
+                app.lms = Landmark.LandmarkSet(['mouth'], [4],
                     mesh.getModelId());
                 console.log("clearing landmarks for new face");
                 app.signaller.landmarkSetChanged.dispatch(app.lms);
