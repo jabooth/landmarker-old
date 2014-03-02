@@ -10,6 +10,7 @@ requirejs.config({
         app: '../app',
         jquery: 'jquery-2.1.0',
         underscore: 'underscore-min',
+        backbone: 'backbone',
         signals: 'signals.min',
         three: 'three.min'
     },
@@ -20,15 +21,18 @@ requirejs.config({
     }
 });
 
+var app = {};
+var THREEG;
+var LandmarksG;
+
 // Start the main app logic.
 requirejs(["jquery", "signals",
-           "app/landmark", "app/rest", "app/viewport", "app/sidebar"],
-    function($, SIGNALS, Landmark, Rest, Viewport, Sidebar) {
+           "app/landmark", "app/landmarkbb", "app/rest", "app/viewport", "app/sidebar"],
+    function($, SIGNALS, Landmark, LandmarkBB, Rest, Viewport, Sidebar) {
 
         "use strict";
 
         $(function () {
-            var app = {};
             app.signaller = {
                 rendererChanged: new SIGNALS.Signal(),
                 landmarkChanged: new SIGNALS.Signal(),
@@ -135,6 +139,10 @@ requirejs(["jquery", "signals",
             });
 
             app.sidebar = Sidebar.Sidebar(app.signaller, app.keyboard);
+            app.LandmarkBB = LandmarkBB;
         });
+
+        THREEG = THREE;
+        LandmarksG = LandmarkBB;
     }
 );
