@@ -16,6 +16,18 @@ define(['backbone'], function(Backbone) {
             return this.get('point');
         },
 
+        select: function () {
+            return this.set('selected', true);
+        },
+
+        deselect: function () {
+            return this.set('selected', false);
+        },
+
+        isSelected: function () {
+            return this.get('selected');
+        },
+
 //        validate: function(attrs, options) {
 //            var x  = 1;
 //            console.log(attrs);
@@ -35,16 +47,6 @@ define(['backbone'], function(Backbone) {
                 point: null
             });
         },
-
-//        equalTo: function (lm) {
-//            if (lm.isEmpty() === this.isEmpty() &&
-//                lm.get('selected') === this.get('selected')) {
-//                if (!lm.isEmpty() && this.get('point').equals(lm.get('point'))) {
-//                    return true;
-//                }
-//            }
-//            return false;
-//        },
 
         toJSON: function () {
             var pointJSON = [null, null, null];
@@ -99,13 +101,13 @@ define(['backbone'], function(Backbone) {
 
         selectAll: function () {
             this.forEach(function(landmark) {
-                landmark.set({selected: true});
+                landmark.select();
             });
         },
 
         deselectAll: function () {
             this.forEach(function(landmark) {
-                landmark.set({selected: false});
+                landmark.deselect();
             });
         }
 
@@ -150,6 +152,10 @@ define(['backbone'], function(Backbone) {
             return this.findWhere({active: true});
         },
 
+        withLabel: function (label) {
+            return this.findWhere({label: label});
+        },
+
         toJSON: function () {
             var result = {};
             this.each(function (group) {
@@ -171,12 +177,45 @@ define(['backbone'], function(Backbone) {
                 groups.push(group)
             }
             this.reset(groups);
+            this.activeIndex(0);
         },
 
         deselectAll: function () {
             this.each(function(group) {
                 group.landmarks().deselectAll();
             });
+        },
+
+        nonempty: function () {
+            return _.flatten(this.map(function(group) {
+                return group.landmarks().nonempty();
+            }));
+        },
+
+        activeIndex: function (i) {
+            // firstly, deactivate everything
+            this.each(function(group) {
+                group.set('active', false);
+            });
+            // then, enable the requested index
+            this.at(i).set('active', true);
+        },
+
+        activeLabel: function (label) {
+            // firstly, deactivate everything
+            this.each(function(group) {
+                group.set('active', false);
+            });
+            // then, enable the requested index
+            this.withLabel(label).set('active', true);
+        },
+
+        advanceActiveGroup: function () {
+            var activeIndex = this.indexOf(this.active());
+            if (activeIndex < this.length - 1) {
+                // we can advance!
+                this.groups().activeIndex(activeIndex + 1);
+            }
         }
 
     });
@@ -191,6 +230,21 @@ define(['backbone'], function(Backbone) {
 
         groups: function () {
             return this.get('groups');
+        },
+
+        insertNew: function (v) {
+            var activeGroup = this.groups().active();
+            var insertedLandmark = null;
+            if (activeGroup.landmarks().empty().length !== 0) {
+                // get the first empty landmark and set it
+                insertedLandmark = activeGroup.landmarks().empty()[0];
+                insertedLandmark.set('point', v.clone());
+                if (activeGroup.landmarks().empty().length === 0) {
+                    // we've depleted this group! Auto-advance to the next if we can
+                    this.groups().advanceActiveGroup();
+                }
+            }
+            return insertedLandmark;
         }
 
     });

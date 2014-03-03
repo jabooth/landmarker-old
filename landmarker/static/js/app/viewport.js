@@ -124,15 +124,15 @@ define(['three', './camera'], function (THREE, Camera) {
                     positionLmDrag.copy(intersectionsWithLms[0].point);
                     // the clicked on landmark
                     var landmarkSymbol = intersectionsWithLms[0].object;
-                    var lmInfo = landmarkSymbolToLandmark[landmarkSymbol.id];
+                    var landmark = landmarkSymbolToLandmark[landmarkSymbol.id];
                     // if user isn't holding down shift or doesn't have multiple
                     // selected, deselect rest
                     if (!(keyboard.shift ||
-                        landmarkSet.getActiveGroup().nSelectedLandmarks() > 1)) {
-                        landmarkSet.deselectAll();
+                        landmarkSet.groups().active().landmarks().nSelected() > 1)) {
+                        landmarkSet.groups().deselectAll();
                     }
                     // select this landmark
-                    lmInfo.landmark.select();
+                    landmark.select();
                     signals.landmarkSetChanged.dispatch(landmarkSet);
                     // now we've selected the landmark, we want to enable dragging.
                     // Fix the intersection plane to be where we clicked, only a
@@ -162,14 +162,14 @@ define(['three', './camera'], function (THREE, Camera) {
                         positionLmDrag);  // change in this step
                     // update the position
                     positionLmDrag.copy(intersectionsOnPlane[0].point);
-                    var activeGroup = landmarkSet.getActiveGroup();
-                    var selectedLandmarks = activeGroup.selectedLandmarks();
+                    var activeGroup = landmarkSet.groups().active();
+                    var selectedLandmarks = activeGroup.landmarks().selected();
                     var lm, lmP;
                     for (var i = 0; i < selectedLandmarks.length; i++) {
                         lm = selectedLandmarks[i];
-                        lmP = lm.getPoint();
+                        lmP = lm.point().clone();
                         lmP.add(deltaLmDrag);
-                        lm.setPoint(lmP);
+                        lm.set('point', lmP);
                     }
                     signals.landmarkSetChanged.dispatch(landmarkSet);
                 }
@@ -184,46 +184,45 @@ define(['three', './camera'], function (THREE, Camera) {
                     if (pressedDownOn === PDO.mesh) {
                         //  a click on mesh
                         p = intersectionsWithMesh[0].point;
-                        var status = landmarkSet.insertNewLandmark(p);
-                        lm = status.lm;
-                        landmarkSet.getActiveGroup().deselectAll();
-                        lm.select();
-                        landmarkSet.snapshotGroup();
-                        // TODO should this be a whole group (are we tracking sel)
-                        signals.landmarkChanged.dispatch(lm, status.i, status.group);
+                        // TODO insert new landmark
+                        var lm = landmarkSet.insertNew(p); //LM
+                        landmarkSet.groups().deselectAll();  //LM
+                        lm.select(); //LM
+                        signals.landmarkChanged.dispatch(lm);
                         render();
                     } else if (pressedDownOn === PDO.nothing) {
                         // a click on nothing - deselect all
-                        landmarkSet.deselectAll();
+                        landmarkSet.groups().deselectAll();
                         signals.landmarkSetChanged.dispatch(landmarkSet);
                     }
                 } else {
                     // mouse was dragged
                     if (pressedDownOn === PDO.landmark) {
                         // snap landmarks back onto mesh
-                        var activeGroup = landmarkSet.getActiveGroup();
-                        var selectedLandmarks = activeGroup.selectedLandmarks();
+                        var activeGroup = landmarkSet.groups().active();
+                        var selectedLandmarks = activeGroup.landmarks().selected();
                         var camToLm;
                         for (var i = 0; i < selectedLandmarks.length; i++) {
                             lm = selectedLandmarks[i];
-                            camToLm = lm.getPoint().sub(camera.position).normalize();
+                            camToLm = lm.point().clone().sub(camera.position).normalize();
                             // make the ray point from camera to this point
                             ray.set(camera.position, camToLm);
                             intersectionsWithLms = ray.intersectObject(
                                 mesh.getMesh(), true);
                             if (intersectionsWithLms.length > 0) {
                                 // good, we're still on the mesh.
-                                lm.setPoint(intersectionsWithLms[0].point);
+                                lm.set('point', intersectionsWithLms[0].point);
                             } else {
                                 console.log("fallen off mesh");
-                                for (i = 0; i < selectedLandmarks.length; i++) {
-                                    selectedLandmarks[i].rollbackModifications();
-                                }
+                                // TODO add back in history!
+//                                for (i = 0; i < selectedLandmarks.length; i++) {
+//                                    selectedLandmarks[i].rollbackModifications();
+//                                }
                                 // ok, we've fixed the mess. drop out of the loop
                                 break;
                             }
                             // only here as all landmarks were successfully moved
-                            landmarkSet.snapshotGroup(); // snapshot the active group
+                            //landmarkSet.snapshotGroup(); // snapshot the active group
                         }
                         signals.landmarkSetChanged.dispatch(landmarkSet);
                     }
@@ -314,7 +313,7 @@ define(['three', './camera'], function (THREE, Camera) {
                 return;
             }
             // 1. Go through all the landmarks and remove them from the scene.
-            var i, visibleLms, lmInfo, lm;
+            var i, visibleLms, landmark;
             for (i = 0; i < landmarkSymbols.length; i++) {
                 scene.remove(landmarkSymbols[i]);
             }
@@ -322,15 +321,15 @@ define(['three', './camera'], function (THREE, Camera) {
             landmarkSymbols = [];
             landmarkSymbolToLandmark = {};
             // 3. Rebuild all landmark symbols using the landmark model.
-            visibleLms = landmarkSet.nonEmptyLandmarks();
+            visibleLms = landmarkSet.groups().nonempty();
             for (i = 0; i < visibleLms.length; i++) {
-                lmInfo = visibleLms[i];
-                var p = lmInfo.landmark.getPoint();
+                landmark = visibleLms[i];
+                var p = landmark.point();
                 var sphere = createSphere(p, mesh.landmarkRadius,
-                    lmInfo.landmark.isSelected());
+                    landmark.isSelected());
                 landmarkSymbols.push(sphere);
                 scene.add(sphere);
-                landmarkSymbolToLandmark[sphere.id] = lmInfo;
+                landmarkSymbolToLandmark[sphere.id] = landmark;
             }
 
             function createSphere(v, radius, selected) {

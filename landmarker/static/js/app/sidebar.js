@@ -15,37 +15,37 @@ define(['jquery', 'underscore'], function ($, _) {
 
         function tableForLandmarkGroup(lmGroup) {
             var table = "";
-            for (var i = 0; i < lmGroup.nLandmarks(); i++) {
-                table += tableRowForLandmark(lmGroup.getLandmark(i), i);
+            for (var i = 0; i < lmGroup.landmarks().length; i++) {
+                table += tableRowForLandmark(lmGroup.landmarks().at(i));
             }
             return tableTemplate({table: table});
         }
 
-        function tableRowForLandmark(lm, i) {
-            var template = xyziForLandmark(lm, i);
-            if (i % 2) {
+        function tableRowForLandmark(lm) {
+            var template = xyziForLandmark(lm);
+            if (lm.get('index') % 2) {
                 return trOddTemplate(template);
             } else {
                 return trEvenTemplate(template);
             }
         }
 
-        function xyziForLandmark(lm, i) {
+        function xyziForLandmark(lm) {
             var p;
             if (lm.isEmpty()) {
                 return {
                     x: '-',
                     y: '-',
                     z: '-',
-                    i: i
+                    i: lm.get('index')
                 };
             } else {
-                p = lm.getPoint();
+                p = lm.point();
                 return {
                     x: p.x.toPrecision(4),
                     y: p.y.toPrecision(4),
                     z: p.z.toPrecision(4),
-                    i: i
+                    i: lm.get('index')
                 };
             }
         }
@@ -53,15 +53,15 @@ define(['jquery', 'underscore'], function ($, _) {
         function updateTable(lmGroup) {
             clearTable();
             $('.Button-LandmarkGroup-Active').removeClass('Button-LandmarkGroup-Active');
-            $('.Button-LandmarkGroup#' + lmGroup.getLabel()).addClass('Button-LandmarkGroup-Active');
-            $('.Button-LandmarkGroup#' + lmGroup.getLabel()).after(tableForLandmarkGroup(lmGroup));
+            $('.Button-LandmarkGroup#' + lmGroup.label()).addClass('Button-LandmarkGroup-Active');
+            $('.Button-LandmarkGroup#' + lmGroup.label()).after(tableForLandmarkGroup(lmGroup));
             updateLandmarkLabelAndCount(lmGroup);
         }
 
         function updateLandmarkLabelAndCount(lmGroup) {
-            $(".LabelName").html(lmGroup.getLabel());
-            var n = lmGroup.nLandmarks();
-            var c = n - lmGroup.nEmptyLandmarks();
+            $(".LabelName").html(lmGroup.label());
+            var n = lmGroup.landmarks().length;
+            var c = n - lmGroup.landmarks().empty().length;
             var n_str = pad(n, 2);
             var c_str = pad(c, 2);
             $(".LabelCount").html(c_str + "/" + n_str);
@@ -75,14 +75,14 @@ define(['jquery', 'underscore'], function ($, _) {
 
         function landmarkGroupButton(lmGroup) {
             return landmarkGroupTemplate({
-                label: lmGroup.getLabel(),
-                labelFormatted: lmGroup.getLabel()
+                label: lmGroup.label(),
+                labelFormatted: lmGroup.label()
             });
         }
 
-        signals.landmarkChanged.add(function (lm, i, lmGroup) {
+        signals.landmarkChanged.add(function (lm) {
             var id = "#lm" + i.toString();
-            var p = xyziForLandmark(lm, i);
+            var p = xyziForLandmark(lm);
             $(id + " .x").html(p.x);
             $(id + " .y").html(p.y);
             $(id + " .z").html(p.z);
@@ -91,7 +91,6 @@ define(['jquery', 'underscore'], function ($, _) {
             } else {
                 $(id).removeClass("Table-Cell-Selected");
             }
-            updateLandmarkLabelAndCount(lmGroup)
         });
 
         signals.landmarkSetChanged.add(function (lmSet) {
@@ -99,21 +98,21 @@ define(['jquery', 'underscore'], function ($, _) {
             $(".Sidebar-LandmarksPanel").html("") // clear the landmarks panel
             var lmGroupButton;
             // add on all the landmark group buttons
-            _.each(lmSet.groups, function (group, label) {
+            _.each(lmSet.groups(), function (group) {
                 lmGroupButton = landmarkGroupButton(group);
                 $(".Sidebar-LandmarksPanel").append(lmGroupButton);
             });
             // update insert the table for the active group
-            updateTable(lmSet.getActiveGroup());
+            updateTable(lmSet.groups().active());
             // add the event listeners for the table
             $("tr").click(function () {
                 console.log('row clicked');
                 var i = parseInt(this.id.substring(2),10);
                 if (!keyboard.shift) {
-                    lmSet.deselectAll();
+                    lmSet.groups().deselectAll();
                 }
-                var active = lmSet.getActiveGroup();
-                var lm = active.getLandmark(i);
+                var active = lmSet.groups().active();
+                var lm = active.landmarks().at(i);
                 if (!lm.isEmpty()) {
                     lm.select();
                 }
@@ -140,5 +139,3 @@ define(['jquery', 'underscore'], function ($, _) {
         Sidebar: Sidebar
     }
 });
-
-

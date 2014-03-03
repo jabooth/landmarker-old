@@ -84,7 +84,7 @@ requirejs(["jquery", "signals",
                         app.keyboard.ctrl = true;
                         break;
                     case 27:  // esc
-                        app.lms.deselectAll();
+                        app.lms.groups().deselectAll();
                         app.signaller.landmarkSetChanged.dispatch(app.lms);
                         break;
                 }
@@ -106,8 +106,8 @@ requirejs(["jquery", "signals",
                 // get a handle on the current mesh
                 app.mesh = mesh;
                 // make a fresh LM set
-                app.lms = Landmark.LandmarkSet(['mouth', 'eyes', 'nose'], [4, 2, 5],
-                    mesh.getModelId());
+                app.lms = new LandmarkBB.LandmarkSet;
+                app.lms.groups().initEmpty(['mouth', 'eyes', 'nose'], [4, 2, 5]);
                 console.log("clearing landmarks for new face");
                 app.signaller.landmarkSetChanged.dispatch(app.lms);
             });
