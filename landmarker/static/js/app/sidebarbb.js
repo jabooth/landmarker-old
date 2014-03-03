@@ -70,7 +70,6 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         initialize : function() {
             _.bindAll(this, 'render', 'renderOne');
             this.listenTo(this.collection, "reset", this.render);
-
         },
 
         render: function() {
@@ -89,12 +88,52 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
     });
 
+    var LandmarkGroupButtonView = Backbone.View.extend({
+
+        tagName: "button",
+
+        className: "Button-LandmarkGroup",
+
+        initialize : function() {
+            _.bindAll(this, 'render');
+            this.listenTo(this.model, "all", this.render);
+        },
+
+        render: function () {
+            this.$el.html(this.model.label());
+            this.$el.toggleClass("Button-LandmarkGroup-Active", this.model.get('active'));
+            return this;
+        }
+    });
+
     var LandmarkGroupView = Backbone.View.extend({
 
+        // TODO make this a useful div
+        tagName: 'div',
+
+        initialize : function() {
+            _.bindAll(this, 'render');
+            this.listenTo(this.model, "all", this.render);
+        },
+
+        render: function () {
+            var button = new LandmarkGroupButtonView({model:this.model});
+            var landmarkTable;
+            this.$el.empty();
+            this.$el.append(button.render().$el);
+            if (this.model.get('active')) {
+                landmarkTable = new LandmarkListView(
+                    {collection: this.model.landmarks()})
+                this.$el.append(landmarkTable.render().$el);
+            }
+            return this;
+        }
     });
 
     return {
         LandmarkView: LandmarkView,
-        LandmarkListView: LandmarkListView
+        LandmarkListView: LandmarkListView,
+        LandmarkGroupButtonView: LandmarkGroupButtonView,
+        LandmarkGroupView: LandmarkGroupView
     }
 });
