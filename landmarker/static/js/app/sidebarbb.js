@@ -130,10 +130,36 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+    var LandmarkGroupListView = Backbone.View.extend({
+
+        // TODO make this a useful div
+        tagName: 'div',
+
+        initialize : function() {
+            _.bindAll(this, 'render', 'renderOne');
+            this.listenTo(this.collection, "reset", this.render);
+        },
+
+        render: function() {
+            this.$el.empty();
+            this.collection.each(this.renderOne);
+            return this;
+        },
+
+        renderOne : function(model) {
+            var group = new LandmarkGroupView({model:model});
+            // reset the view's element to it's template
+            this.$el.append(group.render().$el);
+            return this;
+        }
+
+    });
+
     return {
         LandmarkView: LandmarkView,
         LandmarkListView: LandmarkListView,
         LandmarkGroupButtonView: LandmarkGroupButtonView,
-        LandmarkGroupView: LandmarkGroupView
+        LandmarkGroupView: LandmarkGroupView,
+        LandmarkGroupListView: LandmarkGroupListView
     }
 });

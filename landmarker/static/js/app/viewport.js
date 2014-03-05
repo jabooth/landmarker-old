@@ -84,7 +84,7 @@ define(['three', './camera'], function (THREE, Camera) {
                 dom.focus();
                 onMouseDownPosition.set(event.layerX, event.layerY);
                 intersectionsWithLms = getIntersects(event, landmarkSymbols);
-                intersectionsWithMesh = getIntersects(event, mesh.getMesh());
+                intersectionsWithMesh = getIntersects(event, mesh.mesh());
                 if (event.button === 0) {  // left mouse button
                     if (intersectionsWithLms.length > 0 &&
                         intersectionsWithMesh.length > 0) {
@@ -110,7 +110,7 @@ define(['three', './camera'], function (THREE, Camera) {
                 function meshPressed() {
                     if (keyboard.ctrl) {
                         // focus the camera to the point selected
-                        var intersects = getIntersects(event, mesh.getMesh());
+                        var intersects = getIntersects(event, mesh.mesh());
                         if (intersects.length > 0) {
                             cameraControls.focus(intersects[0].point);
                             cameraControls.enabled = true;
@@ -208,7 +208,7 @@ define(['three', './camera'], function (THREE, Camera) {
                             // make the ray point from camera to this point
                             ray.set(camera.position, camToLm);
                             intersectionsWithLms = ray.intersectObject(
-                                mesh.getMesh(), true);
+                                mesh.mesh(), true);
                             if (intersectionsWithLms.length > 0) {
                                 // good, we're still on the mesh.
                                 lm.set('point', intersectionsWithLms[0].point);
@@ -268,7 +268,7 @@ define(['three', './camera'], function (THREE, Camera) {
         signals.meshChanged.add(function (object) {
             if (mesh !== null) {
                 console.log("Removing existing face");
-                scene.remove(mesh.getMesh());
+                scene.remove(mesh.mesh());
             }
             console.log("Adding face to the scene");
             scene.add(object.getMesh());
@@ -325,7 +325,7 @@ define(['three', './camera'], function (THREE, Camera) {
             for (i = 0; i < visibleLms.length; i++) {
                 landmark = visibleLms[i];
                 var p = landmark.point();
-                var sphere = createSphere(p, mesh.landmarkRadius,
+                var sphere = createSphere(p, mesh.landmarkRadius(),
                     landmark.isSelected());
                 landmarkSymbols.push(sphere);
                 scene.add(sphere);
