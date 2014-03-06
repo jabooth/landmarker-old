@@ -1,6 +1,8 @@
 import json
 import os
-from os import path
+from collections import defaultdict
+import os.path as p
+import glob
 
 from flask import Flask, request
 from flask.ext.restful import abort, Api, Resource
@@ -25,8 +27,20 @@ if config.gzip:
 api = Api(app)
 
 # import all the models we want to serve (they are static)
-models = list(pio.import_meshes(os.path.join(config.model_dir, '*')))
+models = list(pio.import_meshes(p.join(config.model_dir, '*')))
 models = {m.ioinfo.filename: m.tojson() for m in models}
+
+
+def list_landmarks(model_id=None):
+    if model_id is None:
+        model_id = '*'
+    g = glob.glob(p.join(config.landmark_dir, model_id, "*"))
+    return filter(lambda f: p.isfile(f) and p.splitext(f)[-1] == '.json', g)
+
+
+def landmark_fp(model_id, lm_id):
+    lm_dir = p.join(config.landmark_dir, model_id)
+    return p.join(lm_dir, lm_id + '.json')
 
 
 class Model(Resource):
@@ -46,26 +60,52 @@ class ModelList(Resource):
 
 class Landmark(Resource):
 
-    def put(self, lm_id, model_id):
-        # TODO validate data
-        lm_dir = os.path.join(config.landmark_dir, lm_id)
-        fp = os.path.join(lm_dir, model_id + '.json')
+    def get(self, model_id, lm_id):
+        fp = landmark_fp(model_id, lm_id)
+        if not p.isfile(fp):
+            abort(404, message="{}:{} does not exist".format(model_id, lm_id))
+        try:
+            with open(fp, 'rb') as f:
+                lm = json.load(f)
+            return lm
+        except Exception:
+            abort(404, message="{}:{} does not exist".format(model_id, lm_id))
+
+
+    def put(self, model_id, lm_id):
+        fp = landmark_fp(model_id, lm_id)
         with open(fp, 'wb') as f:
             json.dump(request.json, f, sort_keys=True, indent=4,
                       separators=(',', ': '))
-        print type(request.json)
 
 
 class LandmarkList(Resource):
 
-    def get(self, lm_id):
-        return os.listdir(os.path.join(config.landmark_dir, lm_id))
+    def get(self):
+        landmark_files = list_landmarks()
+        mapping = defaultdict(list)
+        for lm_path in landmark_files:
+            dir_path, filename = p.split(lm_path)
+            lm_set = p.splitext(filename)[0]
+            lm_id = p.split(dir_path)[1]
+            mapping[lm_id].append(lm_set)
+        return mapping
 
 
-api.add_resource(ModelList, '/models/')
-api.add_resource(Model, '/models/<string:model_id>')
-api.add_resource(LandmarkList, '/landmarks/<string:lm_id>')
-api.add_resource(Landmark, '/landmarks/<string:lm_id>/<string:model_id>')
+class LandmarkListForId(Resource):
+
+    def get(self, model_id):
+        landmark_files = list_landmarks(model_id=model_id)
+        return [p.splitext(p.split(f)[-1])[0] for f in landmark_files]
+
+
+api_endpoint = '/api/v1/'
+api.add_resource(ModelList, api_endpoint + 'models')
+api.add_resource(Model, api_endpoint + 'models/<string:model_id>')
+api.add_resource(LandmarkList, api_endpoint + 'landmarks')
+api.add_resource(LandmarkListForId, api_endpoint + 'landmarks/<string:model_id>')
+api.add_resource(Landmark, api_endpoint +
+                           'landmarks/<string:model_id>/<string:lm_id>')
 
 
 # @app.route('/static')
