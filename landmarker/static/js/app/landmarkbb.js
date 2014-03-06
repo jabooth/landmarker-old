@@ -17,6 +17,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         },
 
         select: function () {
+            this.collection.deselectAll();
+            // TODO enable multiple selection here
             return this.set('selected', true);
         },
 
@@ -123,6 +125,11 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             };
         },
 
+        makeActive: function () {
+            this.collection.deactivateAll();
+            this.set('active', true);
+        },
+
         label: function () {
             return this.get('label');
         },
@@ -180,6 +187,12 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             this.activeIndex(0);
         },
 
+        deactivateAll: function () {
+            this.each(function(group) {
+                group.set('active', false);
+            });
+        },
+
         deselectAll: function () {
             this.each(function(group) {
                 group.landmarks().deselectAll();
@@ -214,7 +227,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             var activeIndex = this.indexOf(this.active());
             if (activeIndex < this.length - 1) {
                 // we can advance!
-                this.groups().activeIndex(activeIndex + 1);
+                this.activeIndex(activeIndex + 1);
             }
         }
 
@@ -263,11 +276,15 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                         return new Landmark;
                     } else {
                         var x, y, z;
+                        var index = _.indexOf(lmks.landmarks, point);
                         x = point.point[0];
                         y = point.point[1];
                         z = point.point[2];
                         // TODO handle index here
-                        return new Landmark({point: new THREE.Vector3(x, y, z)});
+                        return new Landmark({
+                            point: new THREE.Vector3(x, y, z),
+                            index: index
+                        });
                     }
                 }));
                 return new LandmarkGroup({landmarks: lmList, label: label});

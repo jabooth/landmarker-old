@@ -99,6 +99,18 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
 
             models: function () {
                 return this.get('models');
+            },
+
+            nModels: function () {
+                return this.get('models').length;
+            },
+
+            next: function () {
+                console.log('advancing mesh')
+            },
+
+            previous: function () {
+
             }
 
         });

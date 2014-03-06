@@ -57,9 +57,10 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
         select: function() {
             console.log('selected!');
-            this.model.set({selected: true});
+            this.model.select();
         }
     });
+
 
     // TODO listen to subview selections, deselect rest
     var LandmarkListView = Backbone.View.extend({
@@ -89,11 +90,20 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
     });
 
+
     var LandmarkGroupButtonView = Backbone.View.extend({
 
         tagName: "button",
 
         className: "Button-LandmarkGroup",
+
+        events: {
+            'click' : "makeActive"
+        },
+
+        makeActive: function () {
+            this.model.makeActive();
+        },
 
         initialize : function() {
             _.bindAll(this, 'render');
@@ -106,6 +116,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             return this;
         }
     });
+
 
     var LandmarkGroupView = Backbone.View.extend({
 
@@ -131,10 +142,10 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+
     var LandmarkGroupListView = Backbone.View.extend({
 
         // TODO make this a useful div
-        tagName: 'div',
 
         initialize : function() {
             _.bindAll(this, 'render', 'renderOne');
@@ -155,6 +166,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
 
     });
+
 
     var ModelPagerView = Backbone.View.extend({
 
@@ -184,6 +196,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+
     var SaveRevertView = Backbone.View.extend({
 
         el: '#saveRevert',
@@ -212,6 +225,20 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+
+    var Sidebar = Backbone.View.extend({
+
+        initialize : function() {
+            new SaveRevertView({model: this.model.get('landmarks')});
+            new ModelPagerView({model: this.model.get('models')});
+            var lmView = new LandmarkGroupListView({
+                collection: this.model.get('landmarks').get('groups')
+            });
+            $('.Sidebar-LandmarksPanel').html(lmView.render().$el)
+        }
+
+    });
+
     return {
         LandmarkView: LandmarkView,
         LandmarkListView: LandmarkListView,
@@ -219,6 +246,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         LandmarkGroupView: LandmarkGroupView,
         LandmarkGroupListView: LandmarkGroupListView,
         ModelPagerView: ModelPagerView,
-        SaveRevertView: SaveRevertView
+        SaveRevertView: SaveRevertView,
+        Sidebar: Sidebar
     }
 });

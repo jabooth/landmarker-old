@@ -24,7 +24,6 @@ requirejs.config({
 var app;
 var SidebarG;
 
-
 // Start the main app logic.
 requirejs(["jquery", "three",
     "app/landmarkbb", "app/sidebarbb", "app/modelbb", "app/app"],
