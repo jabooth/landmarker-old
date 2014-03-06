@@ -272,11 +272,11 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             }
             var landmarkGroupList = new LandmarkGroupList(_.map(json.groups, function (lmks, label) {
                 var lmList = new LandmarkList(_.map(lmks.landmarks, function (point) {
+                    var index = _.indexOf(lmks.landmarks, point);
                     if (point.point[0] === null) {
-                        return new Landmark;
+                        return new Landmark({index: index});
                     } else {
                         var x, y, z;
-                        var index = _.indexOf(lmks.landmarks, point);
                         x = point.point[0];
                         y = point.point[1];
                         z = point.point[2];
@@ -289,6 +289,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 }));
                 return new LandmarkGroup({landmarks: lmList, label: label});
             }));
+            landmarkGroupList.at(0).makeActive();
             return {groups: landmarkGroupList};
         },
 
@@ -296,13 +297,6 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             return {
                 groups: this.get('groups'),
                 version: 1};
-        }
-    });
-
-    var LandmarkAdapter = Backbone.Model.extend({
-
-        url: function () {
-            return "api/v1/landmarks";
         }
     });
 

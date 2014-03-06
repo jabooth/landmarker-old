@@ -174,7 +174,8 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
         initialize : function() {
             _.bindAll(this, 'render');
-            //this.listenTo(this.model, "all", this.render);
+            this.listenTo(this.model, "all", this.render);
+            this.render();
         },
 
         events: {
@@ -183,17 +184,19 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         render: function () {
-            this.$el.html(this.model.label());
+            this.$el.find('#next').toggleClass('Button--Disabled', !this.model.hasSuccessor());
+            this.$el.find('#previous').toggleClass('Button--Disabled', !this.model.hasPredecessor());
             return this;
         },
 
         next: function () {
-            console.log('next called');
+            this.model.next();
         },
 
         previous: function () {
-            console.log('previous called');
+            this.model.previous();
         }
+
     });
 
 
@@ -225,12 +228,57 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+    var ModelInfoView = Backbone.View.extend({
+
+        el: '#modelInfo',
+
+        initialize : function() {
+            _.bindAll(this, 'render');
+            this.listenTo(this.model, "all", this.render);
+            this.render();
+        },
+
+        render: function () {
+            this.$el.find('#modelName').html(this.model.get('model').id);
+
+            function pad(n, width, z) {
+                z = z || '0';
+                n = n + '';
+                return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+            }
+
+            var n_str = pad(this.model.get('models').length, 2);
+            var i_str = pad(this.model.modelIndex() + 1, 2);
+            this.$el.find('#modelIndex').html(i_str + "/" + n_str);
+
+            return this;
+        },
+
+        events: {
+            'click #modelName' : "chooseModelId",
+            'click #modelIndex' : "chooseModelNumber"
+        },
+
+        chooseModelNumber: function () {
+            console.log('choose model number called');
+        },
+
+        chooseModelId: function () {
+            console.log('choose model id called');
+        },
+
+        revert: function () {
+            console.log('revert called');
+        }
+    });
+
 
     var Sidebar = Backbone.View.extend({
 
         initialize : function() {
             new SaveRevertView({model: this.model.get('landmarks')});
-            new ModelPagerView({model: this.model.get('models')});
+            new ModelPagerView({model: this.model.get('modelSrc')});
+            new ModelInfoView({model: this.model.get('modelSrc')});
             var lmView = new LandmarkGroupListView({
                 collection: this.model.get('landmarks').get('groups')
             });

@@ -53,27 +53,13 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
         });
 
         var ModelList = Backbone.Collection.extend({
-
             model: Model
-
-//            lookup: function (id) {
-//                var model;
-//                if (model = this.get(id)) {
-//                    console.log('back from cache');
-//                    return $.Deferred().resolveWith(this, model);
-//                } else {
-//                    model = new Model({id: id});
-//                    this.add([model]);
-//                    console.log('from the server');
-//                    return model.fetch();
-//                }
-//            }
         });
 
         // Holds a list of available models, and a model list. The model list
         // is populated immediately, although models aren't fetched until demanded.
         // Also has a model parameter - the currently active model.
-        var ModelAdapter = Backbone.Model.extend({
+        var ModelSource = Backbone.Model.extend({
 
             defaults: function () {
                 return {
@@ -93,7 +79,6 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
                 var model = modelList.at(0);
                 return {
                     models: modelList,
-                    model: model
                 };
             },
 
@@ -106,19 +91,48 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             },
 
             next: function () {
-                console.log('advancing mesh')
+                if (!this.hasSuccessor()) {
+                    return;
+                }
+                this.setModel(this.get('models').at(this.modelIndex() + 1));
             },
 
             previous: function () {
+                if (!this.hasPredecessor()) {
+                    return;
+                }
+                this.setModel(this.get('models').at(this.modelIndex() - 1));
+            },
 
+            setModel: function (newModel) {
+                // TODO this should cache and not get every time
+                var that = this;
+                newModel.fetch({
+                    success: function () {
+                        console.log('grabbed new model');
+                        that.set('model', newModel);
+                    }
+                });
+            },
+
+            hasPredecessor: function () {
+                return this.modelIndex() !== 0;
+            },
+
+            hasSuccessor: function () {
+                return this.nModels() - this.modelIndex() !== 1;
+            },
+
+            // returns the index of the currently active model
+            modelIndex: function () {
+                return this.get('models').indexOf(this.get('model'));
             }
-
         });
 
         return {
             Model: Model,
             ModelList: ModelList,
-            ModelAdapter: ModelAdapter
+            ModelSource: ModelSource
         };
     }
 );

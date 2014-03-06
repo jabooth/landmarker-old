@@ -124,6 +124,10 @@ is itself a row flexbox */
     width: 100%;
 }
 
+.Button--Disabled {
+    opacity: 0.33;
+}
+
 .Button-LandmarkGroup {
     background: #2D77C2;
     color: white;
@@ -181,6 +185,7 @@ is itself a row flexbox */
     background: #0A4EB2;
     color: white;
     font-weight: bold;
+    width: 50px;
 }
 
 .Table-Row-Odd {

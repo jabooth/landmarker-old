@@ -9,7 +9,7 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
 
         defaults: function () {
             return {
-                models: new Model.ModelAdapter,
+                modelSrc: new Model.ModelSource,
                 landmarkType: 'ibug68',
                 templateName: '.template'
             }
@@ -18,14 +18,19 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
         initialize: function () {
             // retrieve the list of models.
             _.bindAll(this, 'modelChanged');
-            this.get('models').fetch();
-            var models = this.get('models');
+            var models = this.get('modelSrc');
+            var that = this;
+            models.fetch({
+                success: function () {
+                    var modelSrc = that.get('modelSrc');
+                    modelSrc.setModel(modelSrc.get('models').at(0));
+                }
+            });
             this.listenTo(models, 'change:model', this.modelChanged);
         },
 
         modelChanged: function () {
-            console.log('model has been changed!');
-            this.get('models').get('model').fetch();
+            console.log('model has been changed on the modelSrc!');
             var landmarks = new Landmark.LandmarkSet({
                 id: this.model().id,
                 type: this.get('landmarkType')
@@ -53,7 +58,7 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
         },
 
         model: function () {
-            return this.get('models').get('model');
+            return this.get('modelSrc').get('model');
         }
 
     });
