@@ -1,7 +1,7 @@
 // TODO make some methods hidden (just between these three objects)
 
 
-define(['backbone', './landmarkbb', './meshbb'], function (Backbone, Landmark, Mesh) {
+define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, Model) {
 
     "use strict";
 
@@ -9,15 +9,19 @@ define(['backbone', './landmarkbb', './meshbb'], function (Backbone, Landmark, M
 
         defaults: function () {
             return {
-                mesh: new Mesh.Mesh,
+                models: new Model.ModelAdapter,
                 landmarks: new Landmark.LandmarkSet
             }
+        },
+
+        initialize: function () {
+            console.log('getting model list');
+            this.get('models').fetch();
         }
 
     });
 
     return {
-        App: App,
+        App: App
     };
-
 });

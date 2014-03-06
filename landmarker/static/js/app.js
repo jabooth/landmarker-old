@@ -103,8 +103,8 @@ requirejs(["jquery", "signals",
             }, false);
 
             app.signaller.meshChanged.add(function (mesh) {
-                // get a handle on the current mesh
-                app.mesh = mesh;
+                // get a handle on the current model
+                app.model = mesh;
                 // make a fresh LM set
                 app.lms = new LandmarkBB.LandmarkSet;
                 app.lms.groups().initEmpty(['mouth', 'eyes', 'nose'], [4, 2, 5]);
@@ -118,13 +118,13 @@ requirejs(["jquery", "signals",
             app.restClient.retrieveFirstMesh();
 
             $("#nextMesh").click(function () {
-                app.restClient.retrieveMeshAfter(app.mesh.getModelId());
+                app.restClient.retrieveMeshAfter(app.model.getModelId());
             });
             $("#previousMesh").click(function () {
-                app.restClient.retrieveMeshBefore(app.mesh.getModelId());
+                app.restClient.retrieveMeshBefore(app.model.getModelId());
             });
             $("#saveLandmarks").click(function () {
-                app.restClient.saveLandmarks(app.mesh.getModelId(), app.lms);
+                app.restClient.saveLandmarks(app.model.getModelId(), app.lms);
             });
             $('#undo').click(function() {
                 app.lms.undo();

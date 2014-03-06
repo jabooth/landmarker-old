@@ -25,14 +25,15 @@ var SidebarG;
 var LandmarkG;
 var THREEG;
 var MeshG;
+var AppG;
 
 var sidebar;
 var landmarkList;
 
 // Start the main app logic.
 requirejs(["jquery", "three",
-           "app/landmarkbb", "app/sidebarbb", "app/meshbb"],
-    function($, THREE, Landmark, Sidebar, Mesh) {
+           "app/landmarkbb", "app/sidebarbb", "app/modelbb", "app/app"],
+    function($, THREE, Landmark, Sidebar, Mesh, App) {
 
         "use strict";
 
@@ -42,6 +43,7 @@ requirejs(["jquery", "three",
             SidebarG = Sidebar;
             LandmarkG = Landmark;
             MeshG = Mesh;
+            AppG = App;
         });
     }
 );

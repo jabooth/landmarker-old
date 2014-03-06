@@ -1,4 +1,4 @@
-define(['backbone'], function(Backbone) {
+define(['backbone', 'three'], function(Backbone, THREE) {
 
     "use strict";
 
@@ -222,6 +222,12 @@ define(['backbone'], function(Backbone) {
 
     var LandmarkSet = Backbone.Model.extend({
 
+        urlRoot: "api/v1/landmarks",
+
+        url: function () {
+            return this.urlRoot + '/' + this.id + '/' + this.get('type');
+        },
+
         defaults: function () {
             return {
                 groups: new LandmarkGroupList
@@ -245,8 +251,41 @@ define(['backbone'], function(Backbone) {
                 }
             }
             return insertedLandmark;
-        }
+        },
 
+        parse: function (json, options) {
+            if (!options.parse) {
+                return;
+            }
+            var landmarkGroupList = new LandmarkGroupList(_.map(json.groups, function (lmks, label) {
+                var lmList = new LandmarkList(_.map(lmks.landmarks, function (point) {
+                    if (point.point[0] === null) {
+                        return new Landmark;
+                    } else {
+                        var x, y, z;
+                        x = point.point[0];
+                        y = point.point[1];
+                        z = point.point[2];
+                        return new Landmark({point: new THREE.Vector3(x, y, z)});
+                    }
+                }));
+                return new LandmarkGroup({landmarks: lmList, label: label});
+            }));
+            return {groups: landmarkGroupList};
+        },
+
+        toJSON: function () {
+            return {
+                groups: this.get('groups'),
+                version: 1};
+        }
+    });
+
+    var LandmarkAdapter = Backbone.Model.extend({
+
+        url: function () {
+            return "api/v1/landmarks";
+        }
     });
 
     return {

@@ -49,7 +49,7 @@ define(['three', './camera'], function (THREE, Camera) {
             // track what was under the mouse upon clicking
             var PDO = {
                 nothing: "nothing",
-                mesh: "mesh",
+                model: "mesh",
                 landmark: "landmark"
             };
             var pressedDownOn = PDO.nothing;
@@ -84,7 +84,7 @@ define(['three', './camera'], function (THREE, Camera) {
                 dom.focus();
                 onMouseDownPosition.set(event.layerX, event.layerY);
                 intersectionsWithLms = getIntersects(event, landmarkSymbols);
-                intersectionsWithMesh = getIntersects(event, mesh.mesh());
+                intersectionsWithMesh = getIntersects(event, mesh.model());
                 if (event.button === 0) {  // left mouse button
                     if (intersectionsWithLms.length > 0 &&
                         intersectionsWithMesh.length > 0) {
@@ -110,13 +110,13 @@ define(['three', './camera'], function (THREE, Camera) {
                 function meshPressed() {
                     if (keyboard.ctrl) {
                         // focus the camera to the point selected
-                        var intersects = getIntersects(event, mesh.mesh());
+                        var intersects = getIntersects(event, mesh.model());
                         if (intersects.length > 0) {
                             cameraControls.focus(intersects[0].point);
                             cameraControls.enabled = true;
                         }
                     }
-                    pressedDownOn = PDO.mesh;
+                    pressedDownOn = PDO.model;
                 }
 
                 function landmarkPressed() {
@@ -181,8 +181,8 @@ define(['three', './camera'], function (THREE, Camera) {
                 var p, lm;
                 if (onMouseDownPosition.distanceTo(onMouseUpPosition) < 1) {
                     // a click
-                    if (pressedDownOn === PDO.mesh) {
-                        //  a click on mesh
+                    if (pressedDownOn === PDO.model) {
+                        //  a click on model
                         p = intersectionsWithMesh[0].point;
                         // TODO insert new landmark
                         var lm = landmarkSet.insertNew(p); //LM
@@ -198,7 +198,7 @@ define(['three', './camera'], function (THREE, Camera) {
                 } else {
                     // mouse was dragged
                     if (pressedDownOn === PDO.landmark) {
-                        // snap landmarks back onto mesh
+                        // snap landmarks back onto model
                         var activeGroup = landmarkSet.groups().active();
                         var selectedLandmarks = activeGroup.landmarks().selected();
                         var camToLm;
@@ -208,12 +208,12 @@ define(['three', './camera'], function (THREE, Camera) {
                             // make the ray point from camera to this point
                             ray.set(camera.position, camToLm);
                             intersectionsWithLms = ray.intersectObject(
-                                mesh.mesh(), true);
+                                mesh.model(), true);
                             if (intersectionsWithLms.length > 0) {
-                                // good, we're still on the mesh.
+                                // good, we're still on the model.
                                 lm.set('point', intersectionsWithLms[0].point);
                             } else {
-                                console.log("fallen off mesh");
+                                console.log("fallen off model");
                                 // TODO add back in history!
 //                                for (i = 0; i < selectedLandmarks.length; i++) {
 //                                    selectedLandmarks[i].rollbackModifications();
@@ -268,7 +268,7 @@ define(['three', './camera'], function (THREE, Camera) {
         signals.meshChanged.add(function (object) {
             if (mesh !== null) {
                 console.log("Removing existing face");
-                scene.remove(mesh.mesh());
+                scene.remove(mesh.model());
             }
             console.log("Adding face to the scene");
             scene.add(object.getMesh());

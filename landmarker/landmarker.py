@@ -71,7 +71,6 @@ class Landmark(Resource):
         except Exception:
             abort(404, message="{}:{} does not exist".format(model_id, lm_id))
 
-
     def put(self, model_id, lm_id):
         fp = landmark_fp(model_id, lm_id)
         with open(fp, 'wb') as f:
