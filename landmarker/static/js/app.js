@@ -27,13 +27,14 @@ var LandmarksG;
 
 // Start the main app logic.
 requirejs(["jquery", "signals",
-           "app/landmark", "app/landmarkbb", "app/rest", "app/viewport", "app/sidebar"],
-    function($, SIGNALS, Landmark, LandmarkBB, Rest, Viewport, Sidebar) {
+           "app/app", "app/landmarkbb", "app/viewport", "app/sidebarbb"],
+    function($, SIGNALS, App, Landmark, Viewport, Sidebar) {
 
         "use strict";
 
         $(function () {
-            app.signaller = {
+            var app = new App.App;
+            var signaller = {
                 rendererChanged: new SIGNALS.Signal(),
                 landmarkChanged: new SIGNALS.Signal(),
                 landmarkSetChanged: new SIGNALS.Signal(),
@@ -43,106 +44,31 @@ requirejs(["jquery", "signals",
                 resetView: new SIGNALS.Signal()
             };
 
-            app.keyboard = {
+            var keyboard = {
                 ctrl: false,
                 shift: false,
                 delete: false
             };
 
-            app.viewport = new Viewport.Viewport(app.signaller, app.keyboard,
+            var viewport = new Viewport.Viewport(signaller, keyboard,
                 $('.viewport'));
 
+            app.on('change:model', function () {
+                console.log("model has changed");
+           });
 
+
+            // handle resizing
             var onWindowResize = function () {
-                app.signaller.windowResize.dispatch();
+                signaller.windowResize.dispatch();
             };
-
             window.addEventListener('resize', onWindowResize, false);
             onWindowResize();
 
-            document.addEventListener('keydown', function (event) {
-                console.log("down: " + event.keyCode);
-                switch (event.keyCode) {
-                    case 46:  // delete
-                        // TODO should clear selected landmarks
-                        break;
-                    case 85:  // u(ndo)
-                        app.lms.undo();
-                        app.signaller.landmarkSetChanged.dispatch(app.lms);
-                        break;
-                    case 82:  // r(edo)
-                        app.lms.redo();
-                        app.signaller.landmarkSetChanged.dispatch(app.lms);
-                        break;
-                    case 32: // spacebar
-                        app.signaller.resetView.dispatch();
-                        break;
-                    case 16: // shift
-                        app.keyboard.shift = true;
-                        break;
-                    case 17:  // ctrl
-                        app.keyboard.ctrl = true;
-                        break;
-                    case 27:  // esc
-                        app.lms.groups().deselectAll();
-                        app.signaller.landmarkSetChanged.dispatch(app.lms);
-                        break;
-                }
-            }, false);
-
-            document.addEventListener('keyup', function (event) {
-                console.log("up: " + event.keyCode);
-                switch (event.keyCode) {
-                    case 16:  // shit
-                        app.keyboard.shift = false;
-                        break;
-                    case 17:  // ctrl
-                        app.keyboard.ctrl = false;
-                        break;
-                }
-            }, false);
-
-            app.signaller.meshChanged.add(function (mesh) {
-                // get a handle on the current model
-                app.model = mesh;
-                // make a fresh LM set
-                app.lms = new LandmarkBB.LandmarkSet;
-                app.lms.groups().initEmpty(['mouth', 'eyes', 'nose'], [4, 2, 5]);
-                console.log("clearing landmarks for new face");
-                app.signaller.landmarkSetChanged.dispatch(app.lms);
-            });
-
-            app.restURL = "http://localhost:5000/";
-            app.restClient = Rest.RESTClient(app.signaller,
-                                             app.restURL, 'icip34');
-            app.restClient.retrieveFirstMesh();
-
-            $("#nextMesh").click(function () {
-                app.restClient.retrieveMeshAfter(app.model.getModelId());
-            });
-            $("#previousMesh").click(function () {
-                app.restClient.retrieveMeshBefore(app.model.getModelId());
-            });
-            $("#saveLandmarks").click(function () {
-                app.restClient.saveLandmarks(app.model.getModelId(), app.lms);
-            });
-            $('#undo').click(function() {
-                app.lms.undo();
-                app.signaller.landmarkSetChanged.dispatch(app.lms);
-            });
-            $('#redo').click(function() {
-                app.lms.redo();
-                app.signaller.landmarkSetChanged.dispatch(app.lms);
-            });
-            $('#resetView').click(function() {
-                app.signaller.resetView.dispatch();
-            });
-
-            app.sidebar = Sidebar.Sidebar(app.signaller, app.keyboard);
-            app.LandmarkBB = LandmarkBB;
+            //app.sidebar = Sidebar.Sidebar(app.signaller, app.keyboard);
         });
-
-        THREEG = THREE;
-        LandmarksG = LandmarkBB;
     }
 );
+
+// insert the panel into the page at the right place
+// $('.Sidebar-LandmarksPanel').html(sidebar.render().$el);

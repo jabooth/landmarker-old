@@ -61,6 +61,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
+    // TODO listen to subview selections, deselect rest
     var LandmarkListView = Backbone.View.extend({
 
         template: _.template($("#tableHeader").html()),
@@ -155,11 +156,69 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
     });
 
+    var ModelPagerView = Backbone.View.extend({
+
+        el: '#modelPager',
+
+        initialize : function() {
+            _.bindAll(this, 'render');
+            //this.listenTo(this.model, "all", this.render);
+        },
+
+        events: {
+            'click #next' : "next",
+            'click #previous' : "previous"
+        },
+
+        render: function () {
+            this.$el.html(this.model.label());
+            return this;
+        },
+
+        next: function () {
+            console.log('next called');
+        },
+
+        previous: function () {
+            console.log('previous called');
+        }
+    });
+
+    var SaveRevertView = Backbone.View.extend({
+
+        el: '#saveRevert',
+
+        initialize : function() {
+            _.bindAll(this, 'render');
+            //this.listenTo(this.model, "all", this.render);
+        },
+
+        events: {
+            'click #save' : "save",
+            'click #revert' : "revert"
+        },
+
+        render: function () {
+            this.$el.html(this.model.label());
+            return this;
+        },
+
+        save: function () {
+            console.log('save called');
+        },
+
+        revert: function () {
+            console.log('revert called');
+        }
+    });
+
     return {
         LandmarkView: LandmarkView,
         LandmarkListView: LandmarkListView,
         LandmarkGroupButtonView: LandmarkGroupButtonView,
         LandmarkGroupView: LandmarkGroupView,
-        LandmarkGroupListView: LandmarkGroupListView
+        LandmarkGroupListView: LandmarkGroupListView,
+        ModelPagerView: ModelPagerView,
+        SaveRevertView: SaveRevertView
     }
 });

@@ -72,6 +72,9 @@ class Landmark(Resource):
             abort(404, message="{}:{} does not exist".format(model_id, lm_id))
 
     def put(self, model_id, lm_id):
+        subject_dir = p.join(config.landmark_dir, model_id)
+        if not p.isdir(subject_dir):
+            os.mkdir(subject_dir)
         fp = landmark_fp(model_id, lm_id)
         with open(fp, 'wb') as f:
             json.dump(request.json, f, sort_keys=True, indent=4,
