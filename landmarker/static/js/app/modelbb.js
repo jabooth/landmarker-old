@@ -87,7 +87,7 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
 
             parse: function (response) {
                 var models = _.map(response, function (modelId) {
-                   new Model({id: modelId})
+                   return new Model({id: modelId})
                 });
                 var modelList = new ModelList(models);
                 var model = modelList.at(0);

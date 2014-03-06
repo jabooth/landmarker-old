@@ -266,6 +266,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                         x = point.point[0];
                         y = point.point[1];
                         z = point.point[2];
+                        // TODO handle index here
                         return new Landmark({point: new THREE.Vector3(x, y, z)});
                     }
                 }));
@@ -297,5 +298,4 @@ define(['backbone', 'three'], function(Backbone, THREE) {
     }
 });
 
-// TODO implement parse
 // TODO implement history
