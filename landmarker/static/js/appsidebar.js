@@ -24,16 +24,19 @@ requirejs.config({
 var app;
 var SidebarG;
 
+var ViewportG;
+
 // Start the main app logic.
 requirejs(["jquery", "three",
-    "app/landmarkbb", "app/sidebarbb", "app/modelbb", "app/app"],
-    function($, THREE, Landmark, Sidebar, Model, App) {
+    "app/landmarkbb", "app/sidebarbb", "app/modelbb", "app/app", "app/viewportbb"],
+    function($, THREE, Landmark, Sidebar, Model, App, Viewport) {
 
         "use strict";
 
         $(function () {
             app = new App.App;
             SidebarG = Sidebar;
+            ViewportG = Viewport;
         });
     }
 );
