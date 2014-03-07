@@ -351,7 +351,7 @@ define(['three', './camera'], function (THREE, Camera) {
         }
 
 
-        // TODO readd non WebGL support
+        // TODO re-add non WebGL support
         var renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
 
 

@@ -6,6 +6,12 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
     "use strict";
 
+    function pad(n, width, z) {
+        z = z || '0';
+        n = n + '';
+        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    }
+
     var LandmarkView = Backbone.View.extend({
 
         template: _.template($("#trTemplate").html()),
@@ -111,8 +117,13 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         render: function () {
-            this.$el.html(this.model.label());
-            this.$el.toggleClass("Button-LandmarkGroup-Active", this.model.get('active'));
+            var lms = this.model.get('landmarks');
+            var nonempty_str = pad(lms.nonempty().length, 2);
+            var lms_str = pad(lms.length, 2);
+            var label = this.model.label();
+            this.$el.html(label + " (" + nonempty_str + "/" + lms_str + ")");
+            this.$el.toggleClass("Button-LandmarkGroup-Active",
+                this.model.get("active"));
             return this;
         }
     });
@@ -184,8 +195,10 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         render: function () {
-            this.$el.find('#next').toggleClass('Button--Disabled', !this.model.hasSuccessor());
-            this.$el.find('#previous').toggleClass('Button--Disabled', !this.model.hasPredecessor());
+            this.$el.find('#next').toggleClass('Button--Disabled',
+                !this.model.hasSuccessor());
+            this.$el.find('#previous').toggleClass('Button--Disabled',
+                !this.model.hasPredecessor());
             return this;
         },
 
@@ -215,12 +228,13 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         render: function () {
-            this.$el.html(this.model.label());
+            // TODO grey out save and revert as required
             return this;
         },
 
         save: function () {
             console.log('save called');
+            this.model.save(null, {parse: false});
         },
 
         revert: function () {
@@ -240,17 +254,9 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
         render: function () {
             this.$el.find('#modelName').html(this.model.get('model').id);
-
-            function pad(n, width, z) {
-                z = z || '0';
-                n = n + '';
-                return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-            }
-
             var n_str = pad(this.model.get('models').length, 2);
             var i_str = pad(this.model.modelIndex() + 1, 2);
             this.$el.find('#modelIndex').html(i_str + "/" + n_str);
-
             return this;
         },
 
