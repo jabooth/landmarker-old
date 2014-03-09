@@ -12,7 +12,7 @@ requirejs.config({
         underscore: 'underscore-min',
         backbone: 'backbone',
         signals: 'signals.min',
-        three: 'three.min'
+        three: 'three'
     },
     shim: {
         three: {
@@ -35,6 +35,8 @@ requirejs(["jquery", "three",
 
         $(function () {
             app = new App.App;
+            var sidebar = new Sidebar.Sidebar({model: app});
+            var v = new Viewport.THREEView({model: app, el: $('#viewport')});
             SidebarG = Sidebar;
             ViewportG = Viewport;
         });

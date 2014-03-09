@@ -40,7 +40,6 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
                 success: function () {
                     console.log('got the landmarks!');
                     that.set('landmarks', landmarks);
-                    that.initSidebar();
                 },
                 error: function () {
                     // can't find landmarks for this person! Grab the template
@@ -52,15 +51,10 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
                             console.log('got the template landmarks!');
                             that.set('landmarks', landmarks);
                             landmarks.id = that.model().id;
-                            that.initSidebar();
                         }
                     });
                 }
             });
-        },
-
-        initSidebar: function () {
-            new SidebarG.Sidebar({model: app});
         },
 
         model: function () {

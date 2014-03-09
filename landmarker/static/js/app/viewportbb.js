@@ -1,306 +1,314 @@
-define(['three', './camera'], function (THREE, Camera) {
+define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _, Backbone, THREE, Camera) {
 
     "use strict";
 
-    function Viewport(signals, keyboard, $dom) {
-        // capture the raw dom
-        var dom = $dom[0];
+    var THREEView = Backbone.View.extend({
 
-        var clearColor = 0xAAAAAA;
+        id: 'viewport',
 
-        // state
+        initialize: function () {
+            _.bindAll(this, 'resize', 'render', 'changeModel');
+            this.$container = $('#viewportContainer');
+            this.scene = new THREE.Scene();
+            this.sceneHelpers = new THREE.Scene();
+
+            this.camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
+            // TODO re-add non WebGL support
+            this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
+            this.camera.position.set(500, 250, 500);
+            this.camera.lookAt(this.scene.position);
+            var clearColor = 0xAAAAAA;
+            this.renderer.setClearColor(clearColor);
+            this.renderer.autoClear = false;
+            this.renderer.autoUpdateScene = false;
+            this.$el.html(this.renderer.domElement);
+
+            // add lights
+            var pointLightLeft = new THREE.PointLight(0x404040, 1, 0);
+            pointLightLeft.position.set(-100, 0, 100);
+            this.scene.add(pointLightLeft);
+            var pointLightRight = new THREE.PointLight(0x404040, 1, 0);
+            pointLightRight.position.set(100, 0, 100);
+            this.scene.add(pointLightRight);
+            this.lights = [pointLightLeft, pointLightRight];
+
+            // add model if there already is one
+            var modelSrc = this.model.get('modelSrc');
+            var model;
+            if (modelSrc.has("model")) {
+                model = modelSrc.get("model");
+                if (model.has("model")) {
+                    this.changeModel();
+                }
+            }
+
+            // Bind event listeners
+            window.addEventListener('resize', this.resize, false);
+            this.resize();
+            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeModel);
+
+//            var mouseHandlers = (function () {
+//
+//                // x, y position of mouse on click states
+//                var onMouseDownPosition = new THREE.Vector2();
+//                var onMouseUpPosition = new THREE.Vector2();
+//
+//                // current world position when in drag state
+//                var positionLmDrag = new THREE.Vector3();
+//                // vector difference in one time step
+//                var deltaLmDrag = new THREE.Vector3();
+//
+//                // track what was under the mouse upon clicking
+//                var PDO = {
+//                    nothing: "nothing",
+//                    model: "mesh",
+//                    landmark: "landmark"
+//                };
+//                var pressedDownOn = PDO.nothing;
+//
+//                // where we store the intersection plane
+//                var intersectionPlanePosition = new THREE.Vector3();
+//                var intersectionsWithLms, intersectionsWithMesh,
+//                    intersectionsOnPlane;
+//
+//                // ----- OBJECT PICKING  ----- //
+//                var intersectionPlane = new THREE.Mesh(
+//                    new THREE.PlaneGeometry(5000, 5000));
+//                intersectionPlane.visible = false;
+//                this.sceneHelpers.add(intersectionPlane);
+//                var ray = new THREE.Raycaster();
+//                var projector = new THREE.Projector();
+//
+//                // ----- EVENTS ----- //
+//                var getIntersects = function (event, object) {
+//                    var vector = new THREE.Vector3(
+//                        (event.layerX / this.$container.width * 2 - 1,
+//                        -(event.layerY / this.$container.width) * 2 + 1, 0.5);
+//                    projector.unprojectVector(vector, this.camera);
+//                    ray.set(this.camera.position,
+//                        vector.sub(this.camera.position).normalize());
+//                    if (object instanceof Array) {
+//                        return ray.intersectObjects(object, true);
+//                    }
+//                    return ray.intersectObject(object, true);
+//                };
+//
+//                var onMouseDown = function (event) {
+//                    event.preventDefault();
+//                    this.$el.focus();
+//                    onMouseDownPosition.set(event.layerX, event.layerY);
+//                    intersectionsWithLms = getIntersects(event, this.landmarkSymbols);
+//                    intersectionsWithMesh = getIntersects(event, this.model);
+//                    if (event.button === 0) {  // left mouse button
+//                        if (intersectionsWithLms.length > 0 &&
+//                            intersectionsWithMesh.length > 0) {
+//                            // degenerate case - which is closer?
+//                            if (intersectionsWithLms[0].distance <
+//                                intersectionsWithMesh[0].distance) {
+//                                landmarkPressed();
+//                            } else {
+//                                meshPressed();
+//                            }
+//                        } else if (intersectionsWithLms.length > 0) {
+//                            landmarkPressed();
+//                        } else if (intersectionsWithMesh.length > 0) {
+//                            meshPressed();
+//                        } else {
+//                            nothingPressed();
+//                        }
+//                        document.addEventListener('mouseup', onMouseUp, false);
+//                    }
+//
+//                    function meshPressed() {
+//                        pressedDownOn = PDO.model;
+//                    }
+//
+//                    function landmarkPressed() {
+//                        pressedDownOn = PDO.landmark;
+//                        positionLmDrag.copy(intersectionsWithLms[0].point);
+//                        // the clicked on landmark
+//                        var landmarkSymbol = intersectionsWithLms[0].object;
+//                        var landmark = this.landmarkSymbolToLandmark[landmarkSymbol.id];
+//                        // if user isn't holding down shift or doesn't have multiple
+//                        // selected, deselect rest
+//                        // TODO handle multiple landmark selection
+//                        // select this landmark
+//                        landmark.select();
+//                        // now we've selected the landmark, we want to enable dragging.
+//                        // Fix the intersection plane to be where we clicked, only a
+//                        // little nearer to the camera.
+//                        intersectionPlanePosition.subVectors(this.camera.position,
+//                            this.landmarkSymbol.position);
+//                        intersectionPlanePosition.divideScalar(10.0);
+//                        intersectionPlanePosition.add(this.landmarkSymbol.position);
+//                        intersectionPlane.position.copy(this.intersectionPlanePosition);
+//                        intersectionPlane.lookAt(this.camera.position);
+//                        intersectionPlane.updateMatrixWorld();
+//                        // and attach the drag listener.
+//                        document.addEventListener('mousemove', onLandmarkDrag, false);
+//                        this.cameraControls.enabled = false;
+//                    }
+//
+//                    function nothingPressed() {
+//                        pressedDownOn = PDO.nothing;
+//                        this.cameraControls.enabled = true;
+//                    }
+//                };
+//
+//                var onLandmarkDrag = function (event) {
+//                    intersectionsOnPlane = getIntersects(event, intersectionPlane);
+//                    if (intersectionsOnPlane.length > 0) {
+//                        deltaLmDrag.subVectors(intersectionsOnPlane[0].point,
+//                            positionLmDrag);  // change in this step
+//                        // update the position
+//                        positionLmDrag.copy(intersectionsOnPlane[0].point);
+//                        var activeGroup = landmarkSet.groups().active();
+//                        var selectedLandmarks = activeGroup.landmarks().selected();
+//                        var lm, lmP;
+//                        for (var i = 0; i < selectedLandmarks.length; i++) {
+//                            lm = selectedLandmarks[i];
+//                            lmP = lm.point().clone();
+//                            lmP.add(deltaLmDrag);
+//                            lm.set('point', lmP);
+//                        }
+//                        signals.landmarkSetChanged.dispatch(landmarkSet);
+//                    }
+//                };
+//
+//                var onMouseUp = function (event) {
+//                    onMouseUpPosition.set(event.layerX, event.layerY);
+//                    cameraControls.enabled = true;
+//                    var p, lm;
+//                    if (onMouseDownPosition.distanceTo(onMouseUpPosition) < 1) {
+//                        // a click
+//                        if (pressedDownOn === PDO.model) {
+//                            //  a click on model
+//                            p = intersectionsWithMesh[0].point;
+//                            // TODO insert new landmark
+//                            var lm = landmarkSet.insertNew(p); //LM
+//                            landmarkSet.groups().deselectAll();  //LM
+//                            lm.select(); //LM
+//                            signals.landmarkChanged.dispatch(lm);
+//                            render();
+//                        } else if (pressedDownOn === PDO.nothing) {
+//                            // a click on nothing - deselect all
+//                            landmarkSet.groups().deselectAll();
+//                            signals.landmarkSetChanged.dispatch(landmarkSet);
+//                        }
+//                    } else {
+//                        // mouse was dragged
+//                        if (pressedDownOn === PDO.landmark) {
+//                            // snap landmarks back onto model
+//                            var activeGroup = landmarkSet.groups().active();
+//                            var selectedLandmarks = activeGroup.landmarks().selected();
+//                            var camToLm;
+//                            for (var i = 0; i < selectedLandmarks.length; i++) {
+//                                lm = selectedLandmarks[i];
+//                                camToLm = lm.point().clone().sub(camera.position).normalize();
+//                                // make the ray point from camera to this point
+//                                ray.set(camera.position, camToLm);
+//                                intersectionsWithLms = ray.intersectObject(
+//                                    mesh.model(), true);
+//                                if (intersectionsWithLms.length > 0) {
+//                                    // good, we're still on the model.
+//                                    lm.set('point', intersectionsWithLms[0].point);
+//                                } else {
+//                                    console.log("fallen off model");
+//                                    // TODO add back in history!
+////                                for (i = 0; i < selectedLandmarks.length; i++) {
+////                                    selectedLandmarks[i].rollbackModifications();
+////                                }
+//                                    // ok, we've fixed the mess. drop out of the loop
+//                                    break;
+//                                }
+//                                // only here as all landmarks were successfully moved
+//                                //landmarkSet.snapshotGroup(); // snapshot the active group
+//                            }
+//                            signals.landmarkSetChanged.dispatch(landmarkSet);
+//                        }
+//                    }
+//
+//                    document.removeEventListener('mousemove', onLandmarkDrag);
+//                    document.removeEventListener('mouseup', onMouseUp);
+//                };
+//
+//                return {
+//                    mouseDown: onMouseDown,
+//                }
+//            })();
+
+            // controls need to be added *after* main logic,
+            // otherwise cameraControls.enabled doesn't work.
+            this.cameraControls = new Camera.CameraController(this.camera, this.el);
+            // when the camera updates, render
+            var that = this;
+            this.cameraControls.addEventListener('change', function () {
+                that.update();
+            });
+
+            animate();
+
+            function animate() {
+                requestAnimationFrame(animate);
+            }
+        },
+
+        events: {
+            'click' : "clickHandler"
+        },
+
+        changeModel: function () {
+            // firstly, clear the scene of any existing mesh
+            // TODO this will have to not remove landmarks
+            var obj, i;
+            for (i = this.scene.children.length - 1; i >= 0; i --) {
+                obj = this.scene.children[i];
+                if (!_.contains(this.lights, obj)) {
+                    // it's not a light
+                    this.scene.remove(obj);
+                }
+            }
+            console.log("Adding face to the scene");
+            this.scene.add(this.model.get('modelSrc').get('model').get('model'));
+            this.update();
+        },
+
+        update: function () {
+            this.sceneHelpers.updateMatrixWorld();
+            console.log('update called');
+            this.scene.updateMatrixWorld();
+            this.renderer.clear();
+            this.renderer.render(this.scene, this.camera);
+            this.renderer.render(this.sceneHelpers, this.camera);
+        },
+
+        resize: function () {
+            var w, h;
+            w = this.$container.width();
+            h = this.$container.height();
+            this.camera.aspect = w / h;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(w, h);
+            this.update();
+        },
+
+        clickHandler: function () {
+            console.log("The THREE View has been clicked");
+        }
+
+    });
+
+    function Viewport(signals, $dom) {
+
         var landmarkSet = null;  // only ever hold one landmark set
         var landmarkSymbols = [];  // LM objects we currently have in the scene
         var mesh = null;  // the single object we are landmarking
 
         var landmarkSymbolToLandmark = {};
 
-        // ----- SCENE HELPERS ----- //
-        var sceneHelpers = new THREE.Scene();
 
-        // ----- SCENE AND CAMERA ----- //
-        var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(50,
-            dom.offsetWidth / dom.offsetHeight, 0.02, 5000);
-        camera.position.set(500, 250, 500);
-        camera.lookAt(scene.position);
-
-        //var ambientLight = new THREE.AmbientLight(0x404040); // soft white light
-        //scene.add(ambientLight);
-
-        var pointLightLeft = new THREE.PointLight(0x404040, 1, 0);
-        pointLightLeft.position.set(-100, 0, 100);
-        scene.add(pointLightLeft);
-        var pointLightRight = new THREE.PointLight(0x404040, 1, 0);
-        pointLightRight.position.set(100, 0, 100);
-        scene.add(pointLightRight);
-
-        var mouseHandlers = (function () {
-
-            // x, y position of mouse on click states
-            var onMouseDownPosition = new THREE.Vector2();
-            var onMouseUpPosition = new THREE.Vector2();
-
-            // current world position when in drag state
-            var positionLmDrag = new THREE.Vector3();
-            // vector difference in one time step
-            var deltaLmDrag = new THREE.Vector3();
-
-            // track what was under the mouse upon clicking
-            var PDO = {
-                nothing: "nothing",
-                model: "mesh",
-                landmark: "landmark"
-            };
-            var pressedDownOn = PDO.nothing;
-
-            // where we store the intersection plane
-            var intersectionPlanePosition = new THREE.Vector3();
-            var intersectionsWithLms, intersectionsWithMesh, intersectionsOnPlane;
-
-            // ----- OBJECT PICKING  ----- //
-            var intersectionPlane = new THREE.Mesh(
-                new THREE.PlaneGeometry(5000, 5000));
-            intersectionPlane.visible = false;
-            sceneHelpers.add(intersectionPlane);
-            var ray = new THREE.Raycaster();
-            var projector = new THREE.Projector();
-
-            // ----- EVENTS ----- //
-            var getIntersects = function (event, object) {
-                var vector = new THREE.Vector3(
-                    (event.layerX / dom.offsetWidth) * 2 - 1,
-                    -(event.layerY / dom.offsetHeight) * 2 + 1, 0.5);
-                projector.unprojectVector(vector, camera);
-                ray.set(camera.position, vector.sub(camera.position).normalize());
-                if (object instanceof Array) {
-                    return ray.intersectObjects(object, true);
-                }
-                return ray.intersectObject(object, true);
-            };
-
-            var onMouseDown = function (event) {
-                event.preventDefault();
-                dom.focus();
-                onMouseDownPosition.set(event.layerX, event.layerY);
-                intersectionsWithLms = getIntersects(event, landmarkSymbols);
-                intersectionsWithMesh = getIntersects(event, mesh.model());
-                if (event.button === 0) {  // left mouse button
-                    if (intersectionsWithLms.length > 0 &&
-                        intersectionsWithMesh.length > 0) {
-                        // degenerate case - which is closer?
-                        if (intersectionsWithLms[0].distance <
-                            intersectionsWithMesh[0].distance) {
-                            landmarkPressed();
-                        } else {
-                            meshPressed();
-                        }
-                    } else if (intersectionsWithLms.length > 0) {
-                        landmarkPressed();
-                    } else if (intersectionsWithMesh.length > 0) {
-                        meshPressed();
-                    } else {
-                        nothingPressed();
-                    }
-                    if (!keyboard.ctrl) {
-                        document.addEventListener('mouseup', onMouseUp, false);
-                    }
-                }
-
-                function meshPressed() {
-                    if (keyboard.ctrl) {
-                        // focus the camera to the point selected
-                        var intersects = getIntersects(event, mesh.model());
-                        if (intersects.length > 0) {
-                            cameraControls.focus(intersects[0].point);
-                            cameraControls.enabled = true;
-                        }
-                    }
-                    pressedDownOn = PDO.model;
-                }
-
-                function landmarkPressed() {
-                    pressedDownOn = PDO.landmark;
-                    positionLmDrag.copy(intersectionsWithLms[0].point);
-                    // the clicked on landmark
-                    var landmarkSymbol = intersectionsWithLms[0].object;
-                    var landmark = landmarkSymbolToLandmark[landmarkSymbol.id];
-                    // if user isn't holding down shift or doesn't have multiple
-                    // selected, deselect rest
-                    if (!(keyboard.shift ||
-                        landmarkSet.groups().active().landmarks().nSelected() > 1)) {
-                        landmarkSet.groups().deselectAll();
-                    }
-                    // select this landmark
-                    landmark.select();
-                    signals.landmarkSetChanged.dispatch(landmarkSet);
-                    // now we've selected the landmark, we want to enable dragging.
-                    // Fix the intersection plane to be where we clicked, only a
-                    // little nearer to the camera.
-                    intersectionPlanePosition.subVectors(camera.position,
-                        landmarkSymbol.position);
-                    intersectionPlanePosition.divideScalar(10.0);
-                    intersectionPlanePosition.add(landmarkSymbol.position);
-                    intersectionPlane.position.copy(intersectionPlanePosition);
-                    intersectionPlane.lookAt(camera.position);
-                    intersectionPlane.updateMatrixWorld();
-                    // and attach the drag listener.
-                    document.addEventListener('mousemove', onLandmarkDrag, false);
-                    cameraControls.enabled = false;
-                }
-
-                function nothingPressed() {
-                    pressedDownOn = PDO.nothing;
-                    cameraControls.enabled = true;
-                }
-            };
-
-            var onLandmarkDrag = function (event) {
-                intersectionsOnPlane = getIntersects(event, intersectionPlane);
-                if (intersectionsOnPlane.length > 0) {
-                    deltaLmDrag.subVectors(intersectionsOnPlane[0].point,
-                        positionLmDrag);  // change in this step
-                    // update the position
-                    positionLmDrag.copy(intersectionsOnPlane[0].point);
-                    var activeGroup = landmarkSet.groups().active();
-                    var selectedLandmarks = activeGroup.landmarks().selected();
-                    var lm, lmP;
-                    for (var i = 0; i < selectedLandmarks.length; i++) {
-                        lm = selectedLandmarks[i];
-                        lmP = lm.point().clone();
-                        lmP.add(deltaLmDrag);
-                        lm.set('point', lmP);
-                    }
-                    signals.landmarkSetChanged.dispatch(landmarkSet);
-                }
-            };
-
-            var onMouseUp = function (event) {
-                onMouseUpPosition.set(event.layerX, event.layerY);
-                cameraControls.enabled = true;
-                var p, lm;
-                if (onMouseDownPosition.distanceTo(onMouseUpPosition) < 1) {
-                    // a click
-                    if (pressedDownOn === PDO.model) {
-                        //  a click on model
-                        p = intersectionsWithMesh[0].point;
-                        // TODO insert new landmark
-                        var lm = landmarkSet.insertNew(p); //LM
-                        landmarkSet.groups().deselectAll();  //LM
-                        lm.select(); //LM
-                        signals.landmarkChanged.dispatch(lm);
-                        render();
-                    } else if (pressedDownOn === PDO.nothing) {
-                        // a click on nothing - deselect all
-                        landmarkSet.groups().deselectAll();
-                        signals.landmarkSetChanged.dispatch(landmarkSet);
-                    }
-                } else {
-                    // mouse was dragged
-                    if (pressedDownOn === PDO.landmark) {
-                        // snap landmarks back onto model
-                        var activeGroup = landmarkSet.groups().active();
-                        var selectedLandmarks = activeGroup.landmarks().selected();
-                        var camToLm;
-                        for (var i = 0; i < selectedLandmarks.length; i++) {
-                            lm = selectedLandmarks[i];
-                            camToLm = lm.point().clone().sub(camera.position).normalize();
-                            // make the ray point from camera to this point
-                            ray.set(camera.position, camToLm);
-                            intersectionsWithLms = ray.intersectObject(
-                                mesh.model(), true);
-                            if (intersectionsWithLms.length > 0) {
-                                // good, we're still on the model.
-                                lm.set('point', intersectionsWithLms[0].point);
-                            } else {
-                                console.log("fallen off model");
-                                // TODO add back in history!
-//                                for (i = 0; i < selectedLandmarks.length; i++) {
-//                                    selectedLandmarks[i].rollbackModifications();
-//                                }
-                                // ok, we've fixed the mess. drop out of the loop
-                                break;
-                            }
-                            // only here as all landmarks were successfully moved
-                            //landmarkSet.snapshotGroup(); // snapshot the active group
-                        }
-                        signals.landmarkSetChanged.dispatch(landmarkSet);
-                    }
-                }
-
-                document.removeEventListener('mousemove', onLandmarkDrag);
-                document.removeEventListener('mouseup', onMouseUp);
-            };
-
-            var onDoubleClick = function (event) {
-
-            };
-
-            return {
-                mouseDown: onMouseDown,
-                doubleClick: onDoubleClick
-            }
-        })();
 
         dom.addEventListener('mousedown', mouseHandlers.mouseDown, false);
-        dom.addEventListener('dblclick', mouseHandlers.doubleClick, false);
-
-        // controls need to be added *after* main logic,
-        // otherwise cameraControls.enabled doesn't work.
-        var cameraControls = new Camera.CameraController(camera, dom);
-        // when the camera updates, render
-        cameraControls.addEventListener('change', function () {
-            render();
-        });
-
-        // ----- SIGNALS ----- //
-        signals.rendererChanged.add(function (object) {
-            dom.removeChild(renderer.domElement);
-            renderer = object;
-            renderer.setClearColor(clearColor);
-            renderer.autoClear = false;
-            renderer.autoUpdateScene = false;
-            renderer.setSize(dom.offsetWidth, dom.offsetHeight);
-            dom.appendChild(renderer.domElement);
-            render();
-        });
-
-        signals.meshChanged.add(function (object) {
-            if (mesh !== null) {
-                console.log("Removing existing face");
-                scene.remove(mesh.model());
-            }
-            console.log("Adding face to the scene");
-            scene.add(object.getMesh());
-            mesh = object;
-            render();
-        });
-
-        signals.clearColorChanged.add(function (color) {
-            renderer.setClearColor(color);
-            render();
-            clearColor = color;
-        });
-
-        signals.windowResize.add(function () {
-            var w = $(".App-Viewport").width();
-            var h = $(window).height();
-            camera.aspect = w/h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-            render();
-        });
-
-        signals.landmarkSetChanged.add(function (landmarks) {
-            landmarkSet = landmarks;
-            syncLandmarks();
-            render();
-        });
-
-        signals.landmarkChanged.add(function (landmark) {
-            syncLandmarks();
-            render();
-        });
 
         // goes through landmarkSet and ensures every landmark is visualized with
         // it's current state. Also fixes up the mapping between landmarkSymbols and actual
@@ -350,31 +358,6 @@ define(['three', './camera'], function (THREE, Camera) {
             }
         }
 
-
-        // TODO re-add non WebGL support
-        var renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
-
-
-        renderer.setClearColor(clearColor);
-        renderer.autoClear = false;
-        renderer.autoUpdateScene = false;
-        dom.appendChild(renderer.domElement);
-        animate();
-
-        // the actual render loop
-        function animate() {
-            requestAnimationFrame(animate);
-        }
-
-        // on state change, call this
-        function render() {
-            sceneHelpers.updateMatrixWorld();
-            scene.updateMatrixWorld();
-            renderer.clear();
-            renderer.render(scene, camera);
-            renderer.render(sceneHelpers, camera);
-        }
-
         var origup = camera.up.clone();
         var origposition = camera.position.clone();
         var originallookat = scene.position.clone();
@@ -389,6 +372,8 @@ define(['three', './camera'], function (THREE, Camera) {
     }
 
     return {
-        Viewport: Viewport
+        Viewport: Viewport,
+        THREEView: THREEView
     }
+
 });

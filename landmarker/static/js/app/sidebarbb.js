@@ -248,11 +248,11 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
 
         initialize : function() {
             _.bindAll(this, 'render');
-            this.listenTo(this.model, "all", this.render);
-            this.render();
+            this.listenTo(this.model, "change:model", this.render);
         },
 
         render: function () {
+            console.log("ModelInfoView sees modelSrc.model has a change - rerender");
             this.$el.find('#modelName').html(this.model.get('model').id);
             var n_str = pad(this.model.get('models').length, 2);
             var i_str = pad(this.model.modelIndex() + 1, 2);
@@ -282,9 +282,20 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
     var Sidebar = Backbone.View.extend({
 
         initialize : function() {
-            new SaveRevertView({model: this.model.get('landmarks')});
+            _.bindAll(this, "renderLandmarks", "renderModelSrc");
+            this.listenTo(this.model, "change:landmarks", this.renderLandmarks);
+            this.listenTo(this.model, "change:modelSrc", this.renderModelSrc);
+            this.renderModelSrc();
+        },
+
+        renderModelSrc: function () {
             new ModelPagerView({model: this.model.get('modelSrc')});
             new ModelInfoView({model: this.model.get('modelSrc')});
+        },
+
+        renderLandmarks: function () {
+            // TODO inconsistency in binding - manual or hardcoded? not both.
+            new SaveRevertView({model: this.model.get('landmarks')});
             var lmView = new LandmarkGroupListView({
                 collection: this.model.get('landmarks').get('groups')
             });
