@@ -114,6 +114,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         initialize : function() {
             _.bindAll(this, 'render');
             this.listenTo(this.model, "all", this.render);
+            this.listenTo(this.model.get('landmarks'), "all", this.render);
         },
 
         render: function () {

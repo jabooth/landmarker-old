@@ -36,7 +36,7 @@ requirejs(["jquery", "three",
         $(function () {
             app = new App.App;
             var sidebar = new Sidebar.Sidebar({model: app});
-            var v = new Viewport.THREEView({model: app, el: $('#viewport')});
+            var v = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
             SidebarG = Sidebar;
             ViewportG = Viewport;
         });
