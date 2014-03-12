@@ -18,9 +18,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.camera.position.set(500, 250, 500);
             this.camera.lookAt(this.scene.position);
             var clearColor = 0xAAAAAA;
-            this.renderer.setClearColor(clearColor);
+            this.renderer.setClearColorHex(clearColor, 1);
             this.renderer.autoClear = false;
-            this.renderer.autoUpdateScene = false;
+            //this.renderer.autoUpdateScene = false;
             this.$el.html(this.renderer.domElement);
 
             // add lights
@@ -41,11 +41,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     this.changeModel();
                 }
             }
-
-            // Bind event listeners
-            window.addEventListener('resize', this.resize, false);
-            this.resize();
-            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeModel);
+            // make an empty list of landmark views
+            this.landmarkViews = [];
 
 //            var mouseHandlers = (function () {
 //
@@ -246,6 +243,13 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 that.update();
             });
 
+            // Bind event listeners
+            window.addEventListener('resize', this.resize, false);
+            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeModel);
+            this.listenTo(this.model, "change:landmarks", this.changeLandmarks);
+
+            // trigger resize, and register for the animation loop
+            this.resize();
             animate();
 
             function animate() {
@@ -258,8 +262,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         },
 
         changeModel: function () {
+            console.log('Viewport: model has changed');
             // firstly, clear the scene of any existing mesh
-            // TODO this will have to not remove landmarks
+            // TODO currently removes landmarks and it shouldn't
             var obj, i;
             for (i = this.scene.children.length - 1; i >= 0; i --) {
                 obj = this.scene.children[i];
@@ -273,6 +278,28 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.update();
         },
 
+        changeLandmarks: function () {
+            //  build a fresh set of views - clear any existing lms
+            this.landmarkViews = [];
+            var that = this;
+            _.each(this.landmarkViews, function (lmView) {
+                that.scene.remove(lmView.symbol);
+            });
+            console.log('Viewport: landmarks have changed');
+            var groups = this.model.get('landmarks').get('groups');
+            groups.each(function (group) {
+                group.get('landmarks').each(function (lm) {
+                    that.landmarkViews.push(new LandmarkTHREEView(
+                        {
+                            model: lm,
+                            group: group,
+                            viewport: that
+                        }));
+                });
+            })
+        },
+
+        // this is called whenever there is a state change on the THREE scene
         update: function () {
             this.sceneHelpers.updateMatrixWorld();
             console.log('update called');
@@ -296,6 +323,73 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             console.log("The THREE View has been clicked");
         }
 
+    });
+
+    var LandmarkTHREEView = Backbone.View.extend({
+
+        initialize: function (options) {
+            this.listenTo(this.model, "all", this.render);
+            this.group = options.group;
+            this.viewport = options.viewport;
+            this.listenTo(this.group, "change:active", this.render);
+            this.symbol = null; // a THREE object that represents this landmark.
+            // null if the landmark isEmpty
+            this.render();
+        },
+
+        render: function () {
+            console.log('landmark: render');
+            if (this.symbol !== null) {
+                // this landmark already has an allocated representation..
+                if (this.model.isEmpty()) {
+                    // but it's been deleted.
+                    this.viewport.scene.remove(this.symbol);
+                    this.symbol = null;
+
+                } else {
+                    // the model may need updating. See what needs to be done
+                    this.updateSymbol();
+                }
+            } else {
+                // there is no symbol yet
+                if (!this.model.isEmpty()) {
+                    // and there should be! Make it and update it
+                    this.symbol = this.createSphere(this.model.get('point'), 5, 1);
+                    this.updateSymbol();
+                    // and add it to the scene
+                    this.viewport.scene.add(this.symbol);
+                }
+            }
+            // tell our viewport to update
+            this.viewport.update();
+        },
+
+        createSphere: function (v, radius, selected) {
+            var wSegments = 10;
+            var hSegments = 10;
+            var geometry = new THREE.SphereGeometry(radius, wSegments, hSegments);
+            var landmark = new THREE.Mesh(geometry, createDummyMaterial(selected));
+            landmark.name = 'Sphere ' + landmark.id;
+            landmark.position.copy(v);
+            return landmark;
+            function createDummyMaterial(selected) {
+                var hexColor = 0xffff00;
+                if (selected) {
+                    hexColor = 0xff75ff
+                }
+                return new THREE.MeshPhongMaterial({color: hexColor});
+            }
+        },
+
+        updateSymbol: function () {
+            // TODO set colour based on group active
+            this.symbol.position.copy(this.model.point());
+            if (this.model.isSelected()) {
+                this.symbol.material.color.setHex(0xff75ff);
+            } else {
+                this.symbol.material.color.setHex(0xffff00);
+            }
+        }
     });
 
     function Viewport(signals, $dom) {
