@@ -7,7 +7,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         id: 'viewport',
 
         initialize: function () {
-            _.bindAll(this, 'resize', 'render', 'changeModel', 'mousedownHandler');
+            _.bindAll(this, 'resize', 'render', 'changeModel', 'mousedownHandler', 'update');
             this.$container = $('#viewportContainer');
             this.scene = new THREE.Scene();
             this.sceneHelpers = new THREE.Scene();
@@ -18,7 +18,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.camera.position.set(500, 250, 500);
             this.camera.lookAt(this.scene.position);
             var clearColor = 0xAAAAAA;
-            this.renderer.setClearColorHex(clearColor, 1);
+            this.renderer.setClearColor(clearColor, 1);
             this.renderer.autoClear = false;
             //this.renderer.autoUpdateScene = false;
             this.$el.html(this.renderer.domElement);
@@ -55,11 +55,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
                 // track what was under the mouse upon clicking
                 var PDO = {
-                    nothing: "nothing",
+                    NOTHING: "NOTHING",
                     model: "mesh",
                     landmark: "landmark"
                 };
-                var pressedDownOn = PDO.nothing;
+                var pressedDownOn = PDO.NOTHING;
 
                 // where we store the intersection plane
                 var intersectionPlanePosition = new THREE.Vector3();
@@ -114,7 +114,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         } else {
                             nothingPressed();
                         }
-                        document.addEventListener('mouseup', onMouseUp, false);
+                        // start listening for this click finishing
+                        $(document).one('mouseup.viewport', viewportOnMouseUp);
                     }
 
                     function meshPressed() {
@@ -124,39 +125,42 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
                     function landmarkPressed() {
                         console.log('landmark pressed!');
+                        // before anything else, disable the camera
+                        that.cameraControls.disable();
                         pressedDownOn = PDO.landmark;
                         positionLmDrag.copy(intersectionsWithLms[0].point);
                         // the clicked on landmark
                         var landmarkSymbol = intersectionsWithLms[0].object;
-                        var landmark = this.landmarkSymbolToLandmark[landmarkSymbol.id];
-                        // if user isn't holding down shift or doesn't have multiple
-                        // selected, deselect rest
-                        // TODO handle multiple landmark selection
-                        // select this landmark
+                        var landmark;
+                        // hunt through the landmarkViews for the right symbol
+                        for (var i = 0; i < that.landmarkViews.length; i++) {
+                            if (that.landmarkViews[i].symbol === landmarkSymbol) {
+                                landmark = that.landmarkViews[i].model;
+                            }
+                        }
                         landmark.select();
                         // now we've selected the landmark, we want to enable dragging.
                         // Fix the intersection plane to be where we clicked, only a
                         // little nearer to the camera.
                         intersectionPlanePosition.subVectors(that.camera.position,
-                            that.landmarkSymbol.position);
+                            landmarkSymbol.position);
                         intersectionPlanePosition.divideScalar(10.0);
-                        intersectionPlanePosition.add(this.landmarkSymbol.position);
-                        intersectionPlane.position.copy(this.intersectionPlanePosition);
+                        intersectionPlanePosition.add(landmarkSymbol.position);
+                        intersectionPlane.position.copy(intersectionPlanePosition);
                         intersectionPlane.lookAt(that.camera.position);
                         intersectionPlane.updateMatrixWorld();
-                        // and attach the drag listener.
-                        document.addEventListener('mousemove', onLandmarkDrag, false);
-                        that.cameraControls.enabled = false;
+                        // start listening for dragging landmarks
+                        $(document).on('mousemove.lmDrag', onLandmarkDrag);
                     }
 
                     function nothingPressed() {
                         console.log('nothing pressed!');
-                        pressedDownOn = PDO.nothing;
-                        that.cameraControls.enabled = true;
+                        pressedDownOn = PDO.NOTHING;
                     }
                 };
 
                 var onLandmarkDrag = function (event) {
+                    console.log("drag");
                     intersectionsOnPlane = getIntersects(event, intersectionPlane);
                     if (intersectionsOnPlane.length > 0) {
                         deltaLmDrag.subVectors(intersectionsOnPlane[0].point,
@@ -175,17 +179,22 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     }
                 };
 
-                var onMouseUp = function (event) {
-                    onMouseUpPosition.set(event.layerX, event.layerY);
-                    that.cameraControls.enabled = true;
-                    var p, lm;
+                var viewportOnMouseUp = function (event) {
+                    console.log("up");
+                    onMouseUpPosition.set(event.offsetX, event.offsetY);
+                    that.cameraControls.enable();
+                    var p, lm, newLm;
                     if (onMouseDownPosition.distanceTo(onMouseUpPosition) < 1) {
                         // a click
                         if (pressedDownOn === PDO.model) {
                             //  a click on model
                             p = intersectionsWithMesh[0].point;
-                            that.model.get('landmarks').insertNew(p).select(); //LM
-                        } else if (pressedDownOn === PDO.nothing) {
+                            newLm = that.model.get('landmarks').insertNew(p);
+                            if (newLm !== null) {
+                                // inserted a new landmark, select it
+                                newLm.select();
+                            }
+                        } else if (pressedDownOn === PDO.NOTHING) {
                             // a click on nothing - deselect all
                             that.model.get('landmarks').get('groups').deselectAll();
                         }
@@ -220,9 +229,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                             }
                         }
                     }
-
-                    document.removeEventListener('mousemove', onLandmarkDrag);
-                    document.removeEventListener('mouseup', onMouseUp);
+                    // stop listening for lmDrag
+                    $(document).off('mousemove.lmDrag');
                 };
 
                 return onMouseDown
@@ -231,13 +239,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             // make an empty list of landmark views
             this.landmarkViews = [];
             this.mesh = null;
-            // controls need to be added *after* main logic,
-            // otherwise cameraControls.enabled doesn't work.
-            this.cameraControls = new Camera.CameraController(this.camera, this.el);
+            this.cameraControls = Camera.CameraController(this.camera, this.el);
             // when the camera updates, render
-            this.cameraControls.addEventListener('change', function () {
-                that.update();
-            });
+            this.cameraControls.on("change", that.update);
 
             // Bind event listeners
             window.addEventListener('resize', this.resize, false);
@@ -299,7 +303,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         // this is called whenever there is a state change on the THREE scene
         update: function () {
             this.sceneHelpers.updateMatrixWorld();
-            console.log('update called');
             this.scene.updateMatrixWorld();
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
@@ -322,7 +325,13 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         },
 
         landmarkSymbols: function () {
-            return [];
+            var symbols = [];
+            _.each(this.landmarkViews, function (lm) {
+                if (lm.symbol !== null) {
+                    symbols.push(lm.symbol);
+                }
+            });
+            return symbols;
         }
     });
 
@@ -339,7 +348,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         },
 
         render: function () {
-            console.log('landmark: render');
             if (this.symbol !== null) {
                 // this landmark already has an allocated representation..
                 if (this.model.isEmpty()) {
@@ -385,7 +393,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         updateSymbol: function () {
             // TODO set colour based on group active
             this.symbol.position.copy(this.model.point());
-            if (this.model.isSelected()) {
+            if (this.group.get('active') && this.model.isSelected()) {
                 this.symbol.material.color.setHex(0xff75ff);
             } else {
                 this.symbol.material.color.setHex(0xffff00);
@@ -421,7 +429,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
     }
 
     return {
-        Viewport: Viewport,
         ViewportTHREEView: ViewportTHREEView
     }
 
