@@ -7,7 +7,7 @@ import glob
 from flask import Flask, request
 from flask.ext.restful import abort, Api, Resource
 
-import pybug.io as pio
+import menpo.io as mio
 
 
 class Config:
@@ -27,7 +27,7 @@ if config.gzip:
 api = Api(app)
 
 # import all the models we want to serve (they are static)
-models = list(pio.import_meshes(p.join(config.model_dir, '*')))
+models = list(mio.import_meshes(p.join(config.model_dir, '*')))
 models = {m.ioinfo.filename: m.tojson() for m in models}
 
 
@@ -116,7 +116,3 @@ api.add_resource(Landmark, api_endpoint +
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-# TODO PyBug landmarks should be JSON-ible
-# TODO define spec carefully and template concept
-# TODO implement landmarkedmodel endpoint
