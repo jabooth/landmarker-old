@@ -1,7 +1,7 @@
 // TODO make some methods hidden (just between these three objects)
 
 
-define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, Model) {
+define(['backbone', './landmark', './model'], function (Backbone, Landmark, Model) {
 
     "use strict";
 
@@ -10,7 +10,7 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
         defaults: function () {
             return {
                 modelSrc: new Model.ModelSource,
-                landmarkType: 'ibug68',
+                landmarkType: 'shiyang',
                 templateName: '.template'
             }
         },

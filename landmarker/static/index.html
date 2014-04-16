@@ -17,8 +17,8 @@
     </div>
 </div>
 <div class="App" style="height: 100%;">
-    <div class="App-Viewport">
-        <div class="viewport" style="position: fixed;"></div>
+    <div class="App-Viewport" id="viewportContainer">
+        <div class="viewport" id="viewport" style="position: fixed;"></div>
         <div class="App-Viewport-Toolbar">
             <div class="Toolbar">
                 <button class="Button-Basic">Texture</button>
@@ -29,40 +29,39 @@
     </div>
     <div class="App-Sidebar">
         <div class="Sidebar">
-            <div class="Sidebar-row">
-                <button class="Sidebar-row-item MeshName">
-                    patrick_01
+            <div class="Sidebar-row" id="modelInfo">
+                <button class="Sidebar-row-item MeshName" id="modelName">
+                    mesh_name
                 </button>
-                <button class="Sidebar-row-item MeshCount">
-                    001/112
+                <button class="Sidebar-row-item MeshCount" id="modelIndex">
+                    001/999
                 </button>
             </div>
-            <div class="Sidebar-row">
+            <div class="Sidebar-row" id="saveRevert">
                 <div class="Sidebar-row-item">
                     <button class="Button-Save"
-                            id="saveLandmarks">Save</button>
+                            id="save">Save</button>
                 </div>
                 <div class="Sidebar-row-item">
-                    <button class="Button-Revert">Revert</button>
+                    <button class="Button-Revert" id="revert">Revert</button>
                 </div>
             </div>
-            <div class="Sidebar-LandmarksPanel">
+            <div class="Sidebar-LandmarksPanel" id="LandmarksPanel">
             </div>
-            <div class="Sidebar-row">
-                <div class="Sidebar-row-spacer">
-                </div>
+            <div class="Sidebar-row" id="modelPager">
                 <div class="Sidebar-row-item">
                     <button class="Button-Basic"
-                            id="previousMesh">Previous</button>
+                            id="previous">Previous</button>
                 </div>
                 <div class="Sidebar-row-item">
-                    <button class="Button-Basic" id="nextMesh">Next</button>
+                    <button class="Button-Basic" id="next">Next</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script id="trTemplateEven" type="text/template">
+    <script id="trTemplate" type="text/template">
     <tr id="lm<%= i %>">
         <td class="Table-Cell Table-Cell-Count"><%= i %></td>
         <td class="x"><%= x %></td>
@@ -71,17 +70,8 @@
     </tr>
 </script>
 
-    <script id="trTemplateOdd" type="text/template">
-    <tr class="Table-Row-Odd" id="lm<%= i %>">
-        <td class="Table-Cell Table-Cell-Count"><%= i %></td>
-        <td class="x"><%= x %></td>
-        <td class="y"><%= y %></td>
-        <td class="z"><%= z %></td>
-    </tr>
-</script>
 
-
-<script id="tableHeader" type="text/template">
+    <script id="tableHeader" type="text/template">
         <thead>
         <tr>
             <th class="Table-Cell Table-Cell-Header"></th>
@@ -92,21 +82,10 @@
         </thead>
 </script>
 
-<script id="landmarkGroupLabel" type="text/template">
+    <script id="landmarkGroupLabel" type="text/template">
 <button class="Button-LandmarkGroup" id="<%= label %>"><%= labelFormatted %></button>
 </script>
 
 </body>
 
 </html>
-
-<!--
-<div class="Sidebar-row">
-    <button class="Sidebar-row-item LabelName">
-        nose
-    </button>
-    <div class="Sidebar-row-item LabelCount">
-        05/06
-    </div>
-</div>
--->

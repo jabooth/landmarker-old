@@ -12,7 +12,7 @@ requirejs.config({
         underscore: 'underscore-min',
         backbone: 'backbone',
         signals: 'signals.min',
-        three: 'three.min'
+        three: 'three'
     },
     shim: {
         three: {
@@ -21,54 +21,21 @@ requirejs.config({
     }
 });
 
-var app = {};
-var THREEG;
-var LandmarksG;
+var app;
+var sidebar;
+var viewport;
 
 // Start the main app logic.
-requirejs(["jquery", "signals",
-           "app/app", "app/landmarkbb", "app/viewport", "app/sidebarbb"],
-    function($, SIGNALS, App, Landmark, Viewport, Sidebar) {
+requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/model",
+           "app/app", "app/viewport"],
+    function($, THREE, Landmark, Sidebar, Model, App, Viewport) {
 
         "use strict";
 
         $(function () {
-            var app = new App.App;
-            var signaller = {
-                rendererChanged: new SIGNALS.Signal(),
-                landmarkChanged: new SIGNALS.Signal(),
-                landmarkSetChanged: new SIGNALS.Signal(),
-                clearColorChanged: new SIGNALS.Signal(),
-                windowResize: new SIGNALS.Signal(),
-                meshChanged: new SIGNALS.Signal(),
-                resetView: new SIGNALS.Signal()
-            };
-
-            var keyboard = {
-                ctrl: false,
-                shift: false,
-                delete: false
-            };
-
-            var viewport = new Viewport.Viewport(signaller, keyboard,
-                $('.viewport'));
-
-            app.on('change:model', function () {
-                console.log("model has changed");
-           });
-
-
-            // handle resizing
-            var onWindowResize = function () {
-                signaller.windowResize.dispatch();
-            };
-            window.addEventListener('resize', onWindowResize, false);
-            onWindowResize();
-
-            //app.sidebar = Sidebar.Sidebar(app.signaller, app.keyboard);
+            app = new App.App;
+            sidebar = new Sidebar.Sidebar({model: app});
+            viewport = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
         });
     }
 );
-
-// insert the panel into the page at the right place
-// $('.Sidebar-LandmarksPanel').html(sidebar.render().$el);
