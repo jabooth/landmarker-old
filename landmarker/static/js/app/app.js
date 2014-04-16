@@ -59,6 +59,10 @@ define(['backbone', './landmarkbb', './modelbb'], function (Backbone, Landmark, 
 
         model: function () {
             return this.get('modelSrc').get('model');
+        },
+
+        landmarks: function () {
+            return this.get('landmarks');
         }
 
     });

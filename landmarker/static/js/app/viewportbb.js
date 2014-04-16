@@ -131,13 +131,15 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         positionLmDrag.copy(intersectionsWithLms[0].point);
                         // the clicked on landmark
                         var landmarkSymbol = intersectionsWithLms[0].object;
-                        var landmark;
+                        var landmark, group;
                         // hunt through the landmarkViews for the right symbol
                         for (var i = 0; i < that.landmarkViews.length; i++) {
                             if (that.landmarkViews[i].symbol === landmarkSymbol) {
                                 landmark = that.landmarkViews[i].model;
+                                group = that.landmarkViews[i].group;
                             }
                         }
+                        group.makeActive();
                         landmark.select();
                         // now we've selected the landmark, we want to enable dragging.
                         // Fix the intersection plane to be where we clicked, only a
@@ -174,6 +176,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                             lm = selectedLandmarks[i];
                             lmP = lm.point().clone();
                             lmP.add(deltaLmDrag);
+                            if (!lm.get('isChanging')) lm.set('isChanging', true);
                             lm.set('point', lmP);
                         }
                     }
@@ -215,6 +218,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                                 if (intersectionsWithLms.length > 0) {
                                     // good, we're still on the model.
                                     lm.set('point', intersectionsWithLms[0].point);
+                                    lm.set('isChanging', false);
                                 } else {
                                     console.log("fallen off model");
                                     // TODO add back in history!
@@ -363,7 +367,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 // there is no symbol yet
                 if (!this.model.isEmpty()) {
                     // and there should be! Make it and update it
-                    this.symbol = this.createSphere(this.model.get('point'), 5, 1);
+                    this.symbol = this.createSphere(this.model.get('point'), 2, 1);
                     this.updateSymbol();
                     // and add it to the scene
                     this.viewport.scene.add(this.symbol);
