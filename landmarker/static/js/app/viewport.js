@@ -35,8 +35,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             // lights that track with the camera as children
             this.s_camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
             this.s_camera.position.set(1.68, 0.35, 3.0);
-            this.s_camera.lookAt(0, 0, 0);
-            this.scene.add(this.s_camera);
+            this.resetCamera();
 
             // --- SCENE: GENERAL LIGHTING ---
             this.s_lights = new THREE.Object3D();
@@ -140,8 +139,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         } else if (intersectionsWithLms.length > 0) {
                             landmarkPressed();
                         } else if (intersectionsWithMesh.length > 0) {
-//                            console.log(that.s_meshAndLms.worldToLocal(
-//                                intersectionsWithMesh[0].point));
                             meshPressed();
                         } else {
                             nothingPressed();
@@ -223,7 +220,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         // a click
                         if (pressedDownOn === PDO.model) {
                             //  a click on model
-                            p = intersectionsWithMesh[0].point;
+                            p = intersectionsWithMesh[0].point.clone();
+                            // Convert the point back into the model space
+                            that.s_meshAndLms.worldToLocal(p);
                             newLm = that.model.get('landmarks').insertNew(p);
                             if (newLm !== null) {
                                 // inserted a new landmark, select it
@@ -297,6 +296,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             'mousedown' : "mousedownHandler"
         },
 
+        resetCamera: function () {
+            this.s_camera.position.set(1.68, 0.35, 3.0);
+            this.s_camera.lookAt(this.scene.position);
+        },
+
         changeModel: function () {
             console.log('Viewport: mesh has changed');
             // firstly, remove any existing mesh
@@ -316,6 +320,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             var t = mesh.geometry.boundingSphere.center.clone();
             t.multiplyScalar(-1.0 * s);  // -1 as we want to centre
             this.s_meshAndLms.position = t;
+            this.resetCamera();
             this.update();
         },
 
