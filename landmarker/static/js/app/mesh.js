@@ -2,12 +2,55 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
 
     "use strict";
 
+    var basicMaterial = new THREE.MeshPhongMaterial();
+
     var Mesh = Backbone.Model.extend({
 
         urlRoot: "api/v1/meshes",
 
         t_mesh: function () {
             return this.get('t_mesh');
+        },
+
+
+        hasTexture: function() {
+            return this.has('texture');
+        },
+
+        textureOff: function() {
+            if (this.hasTexture()) {
+                var wf = this.isWireframeOn();
+                this.t_mesh().material = basicMaterial;
+                if (wf) {
+                    this.wireframeOn();
+                } else {
+                    this.wireframeOff();
+                }
+            }
+        },
+
+        textureOn: function() {
+            if (this.hasTexture()) {
+                var wf = this.isWireframeOn();
+                this.t_mesh().material = this.get('texture');
+                if (wf) {
+                    this.wireframeOn();
+                } else {
+                    this.wireframeOff();
+                }
+            }
+        },
+
+        isWireframeOn: function () {
+            return this.t_mesh().material.wireframe;
+        },
+
+        wireframeOn: function() {
+           this.t_mesh().material.wireframe = true;
+        },
+
+        wireframeOff: function() {
+            this.t_mesh().material.wireframe = false;
         },
 
         toJSON: function () {
@@ -33,15 +76,47 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             _.each(response.trilist, function (tl) {
                 geometry.faces.push(new THREE.Face3(tl[0], tl[1], tl[2]));
             });
+            var material;
+            var result;
+            if (response.tcoords) {
+                // this mesh has a texture - grab it
+                material = new THREE.MeshPhongMaterial( {
+                    map: THREE.ImageUtils.loadTexture(
+                        'api/v1/textures/' + this.id)});
+                // We expect per-vertex texture coords only. Three js has per
+                // face tcoords, so we need to handle the conversion.
+                // First - generate all the tcoords in a list
+                var tcs = [];
+                _.each(response.tcoords, function (tc) {
+                    tcs.push(new THREE.Vector2(tc[0], tc[1]));
+                });
+                // now index into them to build up the per-face uvs THREE js
+                // uses
+                var t; // the indices for the triangle in question
+                for (var i = 0; i < geometry.faces.length; i++) {
+                    t = geometry.faces[i];
+                    geometry.faceVertexUvs[0].push(
+                        [tcs[t.a], tcs[t.b], tcs[t.c]])
+                }
+                result = {
+                    t_mesh: new THREE.Mesh(geometry, material),
+                    texture: material
+                };
+            } else {
+                // default to basic Phong lighting
+                result = {
+                    t_mesh: new THREE.Mesh(geometry, basicMaterial)
+                };
+            }
+            // clean up the vertices
             geometry.mergeVertices();
             geometry.computeCentroids();
             // needed for lighting to work
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
             geometry.computeBoundingSphere();
-            // default to Phong lighting
-            var material = new THREE.MeshPhongMaterial();
-            return {t_mesh: new THREE.Mesh(geometry, material)};
+
+            return result;
         }
 
     });

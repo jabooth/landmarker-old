@@ -52,8 +52,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
             pointLightRight.position.set(100, 0, 100);
             this.s_lights.add(pointLightRight);
             this.scene.add(this.s_lights);
-            // TODO probably don't need this array any more?
-            this.lights = [pointLightLeft, pointLightRight];
+            // add a soft white ambient light
+            this.s_lights.add(new THREE.AmbientLight(0x404040));
 
 
             // TODO re-add non WebGL support (maybe)

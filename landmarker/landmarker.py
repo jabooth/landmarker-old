@@ -3,11 +3,14 @@ import os
 from collections import defaultdict
 import os.path as p
 import glob
+import StringIO
+from copy import deepcopy
 
-from flask import Flask, request
+from flask import Flask, request, send_file
 from flask.ext.restful import abort, Api, Resource
 
 import menpo.io as mio
+from menpo.shape.mesh import TriMesh, TexturedTriMesh
 
 
 class Config:
@@ -26,27 +29,49 @@ if config.gzip:
     
 api = Api(app)
 
-# import all the models we want to serve (they are static)
-models = list(mio.import_meshes(p.join(config.model_dir, '*')))
-models = {m.ioinfo.filename: m.tojson() for m in models}
 
-james = mio.import_mesh(p.join(config.model_dir, 'James_001_0005.obj'))
-import scipy.io as sio
-x = sio.loadmat("/Users/jab08/Desktop/01_MorphableModel.mat")
-mean_head = x['shapeMU']
-trilist = x['tl']
-from menpo.shape import TriMesh
-trilist[:, [0, 1]] = trilist[:, [1, 0]]
+print('Importing meshes...')
 
-model = TriMesh(mean_head.reshape([-1, 3]), trilist=trilist - 1)
-print(model.n_points)
-models["basel"] = model.tojson()
+meshes = {}
+textures = {}
 
 
-def list_landmarks(model_id=None):
-    if model_id is None:
-        model_id = '*'
-    g = glob.glob(p.join(config.landmark_dir, model_id, "*"))
+def as_jpg_file(image):
+    p = image.as_PILImage()
+    output = StringIO.StringIO()
+    p.save(output, format='jpeg')
+    output.seek(0)
+    return output
+
+
+def as_open_file(file):
+
+    def f():
+        return deepcopy(file)
+
+    return f
+
+for mesh in mio.import_meshes(p.join(config.model_dir, '*')):
+    mesh_id = mesh.ioinfo.filename
+    meshes[mesh_id] = mesh.tojson()
+    if isinstance(mesh, TexturedTriMesh):
+        textures[mesh_id] = as_open_file(as_jpg_file(mesh.texture))
+
+print(' - {} meshes imported.'.format(len(meshes)))
+print(' - {} meshes are textured.'.format(len(textures)))
+
+# import scipy.io as sio
+# x = sio.loadmat("/Users/jab08/Desktop/01_MorphableModel.mat")
+# mean_head, trilist = x['shapeMU'], x['tl']
+# trilist[:, [0, 1]] = trilist[:, [1, 0]]
+# model = TriMesh(mean_head.reshape([-1, 3]), trilist=trilist - 1)
+# meshes["basel"] = model.tojson()
+
+
+def list_landmarks(mesh_id=None):
+    if mesh_id is None:
+        mesh_id = '*'
+    g = glob.glob(p.join(config.landmark_dir, mesh_id, "*"))
     return filter(lambda f: p.isfile(f) and p.splitext(f)[-1] == '.json', g)
 
 
@@ -55,39 +80,54 @@ def landmark_fp(model_id, lm_id):
     return p.join(lm_dir, lm_id + '.json')
 
 
-class Model(Resource):
+class Mesh(Resource):
 
-    def get(self, model_id):
+    def get(self, mesh_id):
         try:
-            return models[model_id]
+            return meshes[mesh_id]
         except KeyError:
-            abort(404, message="{} is not an available model".format(model_id))
+            abort(404, message="{} is not an available model".format(mesh_id))
 
 
-class ModelList(Resource):
+class MeshList(Resource):
 
     def get(self):
-        return list(models)
+        return list(meshes)
+
+
+class Texture(Resource):
+
+    def get(self, mesh_id):
+        try:
+            return send_file(textures[mesh_id](), mimetype='image/jpeg')
+        except KeyError:
+            abort(404, message="{} is not a textured mesh".format(mesh_id))
+
+
+class TextureList(Resource):
+
+    def get(self):
+        return [k for k, v in meshes.iteritems() if 'tcoords' in v]
 
 
 class Landmark(Resource):
 
-    def get(self, model_id, lm_id):
-        fp = landmark_fp(model_id, lm_id)
+    def get(self, mesh_id, lm_id):
+        fp = landmark_fp(mesh_id, lm_id)
         if not p.isfile(fp):
-            abort(404, message="{}:{} does not exist".format(model_id, lm_id))
+            abort(404, message="{}:{} does not exist".format(mesh_id, lm_id))
         try:
             with open(fp, 'rb') as f:
                 lm = json.load(f)
             return lm
         except Exception:
-            abort(404, message="{}:{} does not exist".format(model_id, lm_id))
+            abort(404, message="{}:{} does not exist".format(mesh_id, lm_id))
 
-    def put(self, model_id, lm_id):
-        subject_dir = p.join(config.landmark_dir, model_id)
+    def put(self, mesh_id, lm_id):
+        subject_dir = p.join(config.landmark_dir, mesh_id)
         if not p.isdir(subject_dir):
             os.mkdir(subject_dir)
-        fp = landmark_fp(model_id, lm_id)
+        fp = landmark_fp(mesh_id, lm_id)
         with open(fp, 'wb') as f:
             json.dump(request.json, f, sort_keys=True, indent=4,
                       separators=(',', ': '))
@@ -108,18 +148,24 @@ class LandmarkList(Resource):
 
 class LandmarkListForId(Resource):
 
-    def get(self, model_id):
-        landmark_files = list_landmarks(model_id=model_id)
+    def get(self, mesh_id):
+        landmark_files = list_landmarks(mesh_id=mesh_id)
         return [p.splitext(p.split(f)[-1])[0] for f in landmark_files]
 
 
 api_endpoint = '/api/v1/'
-api.add_resource(ModelList, api_endpoint + 'meshes')
-api.add_resource(Model, api_endpoint + 'meshes/<string:model_id>')
+
+api.add_resource(MeshList, api_endpoint + 'meshes')
+api.add_resource(Mesh, api_endpoint + 'meshes/<string:mesh_id>')
+
+api.add_resource(TextureList, api_endpoint + 'textures')
+api.add_resource(Texture, api_endpoint + 'textures/<string:mesh_id>')
+
 api.add_resource(LandmarkList, api_endpoint + 'landmarks')
-api.add_resource(LandmarkListForId, api_endpoint + 'landmarks/<string:model_id>')
+api.add_resource(LandmarkListForId, api_endpoint +
+                 'landmarks/<string:mesh_id>')
 api.add_resource(Landmark, api_endpoint +
-                           'landmarks/<string:model_id>/<string:lm_id>')
+                 'landmarks/<string:mesh_id>/<string:lm_id>')
 
 
 # @app.route('/static')
