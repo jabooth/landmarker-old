@@ -100,7 +100,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
                 // ----- OBJECT PICKING  ----- //
                 var intersectionPlane = new THREE.Mesh(
-                    new THREE.PlaneGeometry(5000, 5000));
+                    new THREE.PlaneGeometry(100, 100));
                 intersectionPlane.visible = false;
                 that.sceneHelpers.add(intersectionPlane);
                 var ray = new THREE.Raycaster();
@@ -161,7 +161,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         // before anything else, disable the camera
                         that.cameraControls.disable();
                         pressedDownOn = PDO.landmark;
-                        positionLmDrag.copy(intersectionsWithLms[0].point);
                         // the clicked on landmark
                         var landmarkSymbol = intersectionsWithLms[0].object;
                         var landmark, group;
@@ -177,10 +176,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         // now we've selected the landmark, we want to enable dragging.
                         // Fix the intersection plane to be where we clicked, only a
                         // little nearer to the camera.
+                        positionLmDrag.copy(intersectionsWithLms[0].point);
                         intersectionPlanePosition.subVectors(that.s_camera.position,
-                            landmarkSymbol.position);
+                            positionLmDrag);
                         intersectionPlanePosition.divideScalar(10.0);
-                        intersectionPlanePosition.add(landmarkSymbol.position);
+                        intersectionPlanePosition.add(positionLmDrag);
                         intersectionPlane.position.copy(intersectionPlanePosition);
                         intersectionPlane.lookAt(that.s_camera.position);
                         intersectionPlane.updateMatrixWorld();
@@ -198,8 +198,12 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     console.log("drag");
                     intersectionsOnPlane = getIntersects(event, intersectionPlane);
                     if (intersectionsOnPlane.length > 0) {
-                        deltaLmDrag.subVectors(intersectionsOnPlane[0].point,
-                            positionLmDrag);  // change in this step
+                        var intersectMeshSpace = intersectionsOnPlane[0].point.clone();
+                        var prevIntersectInMeshSpace = positionLmDrag.clone();
+                        that.s_meshAndLms.worldToLocal(intersectMeshSpace);
+                        that.s_meshAndLms.worldToLocal(prevIntersectInMeshSpace);
+                        // change in this step in mesh space
+                        deltaLmDrag.subVectors(intersectMeshSpace, prevIntersectInMeshSpace);
                         // update the position
                         positionLmDrag.copy(intersectionsOnPlane[0].point);
                         var activeGroup = that.model.get('landmarks').get('groups').active();
@@ -245,14 +249,15 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                             var camToLm;
                             for (var i = 0; i < selectedLandmarks.length; i++) {
                                 lm = selectedLandmarks[i];
-                                camToLm = lm.point().clone().sub(that.s_camera.position).normalize();
+                                camToLm = that.s_meshAndLms.localToWorld(lm.point().clone()).sub(
+                                    that.s_camera.position).normalize();
                                 // make the ray point from camera to this point
                                 ray.set(that.s_camera.position, camToLm);
                                 intersectionsWithLms = ray.intersectObject(
                                     that.s_mesh, true);
                                 if (intersectionsWithLms.length > 0) {
                                     // good, we're still on the model.
-                                    lm.set('point', intersectionsWithLms[0].point);
+                                    lm.set('point', that.s_meshAndLms.worldToLocal(intersectionsWithLms[0].point.clone()));
                                     lm.set('isChanging', false);
                                 } else {
                                     console.log("fallen off model");
