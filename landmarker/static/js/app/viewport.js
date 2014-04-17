@@ -7,8 +7,13 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         id: 'viewport',
 
         initialize: function () {
-            _.bindAll(this, 'resize', 'render', 'changeModel', 'mousedownHandler', 'update');
+            _.bindAll(this, 'resize', 'render', 'changeMesh', 'mousedownHandler', 'update');
             this.$container = $('#viewportContainer');
+
+            this.meshScale = 1.0;  // The radius of the mesh's bounding sphere
+            // the radius of the landmarks in the normalized scene
+            // TODO this should be on app not Viewport
+            this.landmarkScale = 0.01;
 
             // ------ SCENE GRAPH CONSTRUCTION -----
             this.scene = new THREE.Scene();
@@ -28,7 +33,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.s_mesh = new THREE.Object3D();
             this.s_meshAndLms.add(this.s_mesh);
             this.scene.add(this.s_meshAndLms);
-
 
             // --- SCENE: CAMERA AND DIRECTED LIGHTS ---
             // s_camera holds the camera, and (optionally) any
@@ -66,7 +70,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             if (modelSrc.has("model")) {
                 model = modelSrc.get("model");
                 if (model.has("model")) {
-                    this.changeModel();
+                    this.changeMesh();
                 }
             }
             var that = this;
@@ -280,7 +284,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             // Bind event listeners
             window.addEventListener('resize', this.resize, false);
-            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeModel);
+            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeMesh);
             this.listenTo(this.model, "change:landmarks", this.changeLandmarks);
 
             // trigger resize, and register for the animation loop
@@ -301,7 +305,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.s_camera.lookAt(this.scene.position);
         },
 
-        changeModel: function () {
+        changeMesh: function () {
             console.log('Viewport: mesh has changed');
             // firstly, remove any existing mesh
             if (this.s_mesh.children.length) {
@@ -312,7 +316,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             // Now we need to rescale the s_meshAndLms to fit in the unit sphere
             // First, the scale
-            var s = 1.0 / mesh.geometry.boundingSphere.radius;
+            this.meshScale = mesh.geometry.boundingSphere.radius;
+            var s = 1.0 / this.meshScale;
             this.s_meshAndLms.scale.set(s, s, s);
 
             // THREE.js applies translation AFTER scale, so need to calc
@@ -349,8 +354,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
         // this is called whenever there is a state change on the THREE scene
         update: function () {
-            this.sceneHelpers.updateMatrixWorld();
-            this.scene.updateMatrixWorld();
             this.renderer.clear();
             this.renderer.render(this.scene, this.s_camera);
             this.renderer.render(this.sceneHelpers, this.s_camera);
@@ -401,7 +404,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 // there is no symbol yet
                 if (!this.model.isEmpty()) {
                     // and there should be! Make it and update it
-                    this.symbol = this.createSphere(this.model.get('point'), 2, 1);
+                    this.symbol = this.createSphere(this.model.get('point'),
+                        this.viewport.landmarkScale * this.viewport.meshScale, 1);
                     this.updateSymbol();
                     // and add it to the scene
                     this.viewport.s_lms.add(this.symbol);
