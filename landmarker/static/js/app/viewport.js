@@ -10,8 +10,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             _.bindAll(this, 'resize', 'render', 'changeModel', 'mousedownHandler', 'update');
             this.$container = $('#viewportContainer');
 
-            // ------ SCENEGRAPH CONSTRUCTION -----
-
+            // ------ SCENE GRAPH CONSTRUCTION -----
             this.scene = new THREE.Scene();
 
             // --- SCENE: MODEL AND LANDMARKS ---
@@ -37,7 +36,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.s_cameraAndDirLights = new THREE.Object3D();
             this.s_camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
             // TODO this should be set on s_cameraAndDirLights
-            this.s_camera.position.set(500, 250, 500);
+            this.s_camera.position.set(1.68, 0.35, 3.0);
             this.s_camera.lookAt(this.scene.position);
             this.s_cameraAndDirLights.add(this.s_camera);
             this.scene.add(this.s_cameraAndDirLights);
@@ -128,8 +127,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     event.preventDefault();
                     that.$el.focus();
                     onMouseDownPosition.set(event.offsetX, event.offsetY);
-                    intersectionsWithLms = getIntersects(event, that.landmarkSymbols());
-                    intersectionsWithMesh = getIntersects(event, that.mesh);
+                    // TODO should intersect with our new scene nodes
+                    intersectionsWithLms = getIntersects(event, that.s_lms);
+                    intersectionsWithMesh = getIntersects(event, that.s_mesh);
                     if (event.button === 0) {  // left mouse button
                         if (intersectionsWithLms.length > 0 &&
                             intersectionsWithMesh.length > 0) {
@@ -249,7 +249,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                                 // make the ray point from camera to this point
                                 ray.set(that.s_camera.position, camToLm);
                                 intersectionsWithLms = ray.intersectObject(
-                                    that.mesh, true);
+                                    that.s_mesh, true);
                                 if (intersectionsWithLms.length > 0) {
                                     // good, we're still on the model.
                                     lm.set('point', intersectionsWithLms[0].point);
@@ -277,7 +277,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             // make an empty list of landmark views
             this.landmarkViews = [];
-            this.mesh = null;
             this.cameraControls = Camera.CameraController(this.s_camera, this.el);
             // when the camera updates, render
             this.cameraControls.on("change", that.update);
@@ -301,28 +300,30 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         },
 
         changeModel: function () {
-            console.log('Viewport: model has changed');
-            // firstly, clear the scene of any existing mesh
-            var obj, i;
-            for (i = this.s_meshAndLms.children.length - 1; i >= 0; i --) {
-                obj = this.s_meshAndLms.children[i];
-                this.s_meshAndLms.remove(obj);
+            console.log('Viewport: mesh has changed');
+            // firstly, remove any existing mesh
+            if (this.s_mesh.children.length) {
+                this.s_mesh.remove(this.s_mesh.children[0]);
             }
-            console.log("Adding face to the scene");
-            this.mesh = this.model.get('modelSrc').get('model').get('model');
-            this.s_meshAndLms.add(this.mesh);
+            var mesh = this.model.get('modelSrc').get('model').get('model');
+            this.s_mesh.add(mesh);
+
+            // Now we need to rescale the s_meshAndLms to fit in the unit sphere
+            var s = 1.0 / mesh.geometry.boundingSphere.radius;
+            this.s_meshAndLms.scale.set(s, s, s);
             this.update();
         },
 
         changeLandmarks: function () {
-            //  build a fresh set of views - clear any existing lms
-            this.landmarkViews = [];
-            var that = this;
-            // TODO should this be a destructor on LandmarkView?
-            _.each(this.landmarkViews, function (lmView) {
-                that.modelAndLandmarks.remove(lmView.symbol);
-            });
             console.log('Viewport: landmarks have changed');
+            var that = this;
+            // 1. Clear the scene graph of all landamrks
+            // TODO should this be a destructor on LandmarkView?
+            _.each(this.s_lms, function (lm) {
+                that.s_lms.remove(lm);
+            });
+            // 2. Build a fresh set of views - clear any existing lms
+            this.landmarkViews = [];
             var groups = this.model.get('landmarks').get('groups');
             groups.each(function (group) {
                 group.get('landmarks').each(function (lm) {
@@ -388,7 +389,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 // this landmark already has an allocated representation..
                 if (this.model.isEmpty()) {
                     // but it's been deleted.
-                    this.viewport.s_meshAndLms.remove(this.symbol);
+                    this.viewport.s_lms.remove(this.symbol);
                     this.symbol = null;
 
                 } else {
@@ -402,7 +403,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     this.symbol = this.createSphere(this.model.get('point'), 2, 1);
                     this.updateSymbol();
                     // and add it to the scene
-                    this.viewport.s_meshAndLms.add(this.symbol);
+                    this.viewport.s_lms.add(this.symbol);
                 }
             }
             // tell our viewport to update
