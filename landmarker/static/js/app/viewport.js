@@ -140,8 +140,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         } else if (intersectionsWithLms.length > 0) {
                             landmarkPressed();
                         } else if (intersectionsWithMesh.length > 0) {
-                            console.log(that.s_meshAndLms.worldToLocal(
-                                intersectionsWithMesh[0].point));
+//                            console.log(that.s_meshAndLms.worldToLocal(
+//                                intersectionsWithMesh[0].point));
                             meshPressed();
                         } else {
                             nothingPressed();
@@ -322,11 +322,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         changeLandmarks: function () {
             console.log('Viewport: landmarks have changed');
             var that = this;
-            // 1. Clear the scene graph of all landamrks
+            // 1. Clear the scene graph of all landmarks
             // TODO should this be a destructor on LandmarkView?
-            _.each(this.s_lms, function (lm) {
-                that.s_lms.remove(lm);
-            });
+            this.s_meshAndLms.remove(this.s_lms);
+            this.s_lms = new THREE.Object3D();
+            this.s_meshAndLms.add(this.s_lms);
             // 2. Build a fresh set of views - clear any existing lms
             this.landmarkViews = [];
             var groups = this.model.get('landmarks').get('groups');
@@ -365,16 +365,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             console.log('mouse down');
             event.preventDefault();
             this.handler(event);
-        },
-
-        landmarkSymbols: function () {
-            var symbols = [];
-            _.each(this.landmarkViews, function (lm) {
-                if (lm.symbol !== null) {
-                    symbols.push(lm.symbol);
-                }
-            });
-            return symbols;
         }
     });
 
