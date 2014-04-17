@@ -307,8 +307,15 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.s_mesh.add(mesh);
 
             // Now we need to rescale the s_meshAndLms to fit in the unit sphere
+            // First, the scale
             var s = 1.0 / mesh.geometry.boundingSphere.radius;
             this.s_meshAndLms.scale.set(s, s, s);
+
+            // THREE.js applies translation AFTER scale, so need to calc
+            // appropriate translation
+            var t = mesh.geometry.boundingSphere.center.clone();
+            t.multiplyScalar(-1.0 * s);  // -1 as we want to centre
+            this.s_meshAndLms.position = t;
             this.update();
         },
 
@@ -356,6 +363,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
         mousedownHandler: function (event) {
             console.log('mouse down');
+            event.preventDefault();
             this.handler(event);
         },
 

@@ -67,6 +67,8 @@ define(['jquery', 'underscore', 'backbone', 'three'], function ($, _, Backbone, 
         function zoom(distance) {
             normalMatrix.getNormalMatrix(camera.matrix);
             distance.applyMatrix3(normalMatrix);
+            console.log("camera: zoom - dist: " + distance +
+                "tgt: " + distanceToTarget());
             distance.multiplyScalar(distanceToTarget() * 0.001);
             camera.position.add(distance);
             controller.trigger('change');
@@ -153,6 +155,7 @@ define(['jquery', 'underscore', 'backbone', 'three'], function ($, _, Backbone, 
 
         function onMouseUp(event) {
             console.log('camera: up');
+            event.preventDefault();
             $(document).off('mousemove.camera');
             state = STATE.NONE;
         }
@@ -166,7 +169,8 @@ define(['jquery', 'underscore', 'backbone', 'three'], function ($, _, Backbone, 
             } else if (event.originalEvent.detail) { // Firefox
                 delta = event.originalEvent.detail * 10;
             }
-            tinput.set(0, 0, delta);
+            tinput.set(0, 0, (delta * 1.0 / 120));
+            console.log('wheel: ' + delta);
             zoom(tinput);
         }
 
