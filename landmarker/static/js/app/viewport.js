@@ -31,15 +31,12 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
 
             // --- SCENE: CAMERA AND DIRECTED LIGHTS ---
-            // s_cameraAndDirLights holds the camera, and (optionally) any
-            // lights that track with the camera
-            this.s_cameraAndDirLights = new THREE.Object3D();
+            // s_camera holds the camera, and (optionally) any
+            // lights that track with the camera as children
             this.s_camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
-            // TODO this should be set on s_cameraAndDirLights
             this.s_camera.position.set(1.68, 0.35, 3.0);
-            this.s_camera.lookAt(this.scene.position);
-            this.s_cameraAndDirLights.add(this.s_camera);
-            this.scene.add(this.s_cameraAndDirLights);
+            this.s_camera.lookAt(0, 0, 0);
+            this.scene.add(this.s_camera);
 
             // --- SCENE: GENERAL LIGHTING ---
             this.s_lights = new THREE.Object3D();
@@ -277,7 +274,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             // make an empty list of landmark views
             this.landmarkViews = [];
-            this.cameraControls = Camera.CameraController(this.s_camera, this.el);
+            this.cameraControls = Camera.CameraController(
+                this.s_camera, this.el);
             // when the camera updates, render
             this.cameraControls.on("change", that.update);
 
