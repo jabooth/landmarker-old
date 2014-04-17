@@ -9,28 +9,61 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         initialize: function () {
             _.bindAll(this, 'resize', 'render', 'changeModel', 'mousedownHandler', 'update');
             this.$container = $('#viewportContainer');
-            this.scene = new THREE.Scene();
-            this.sceneHelpers = new THREE.Scene();
 
-            this.camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
-            // TODO re-add non WebGL support
+            // ------ SCENEGRAPH CONSTRUCTION -----
+
+            this.scene = new THREE.Scene();
+
+            // --- SCENE: MODEL AND LANDMARKS ---
+            // s_meshAndLms stores the mesh and landmarks in the models original
+            // coordinates. This is always transformed to the unit sphere for
+            // consistency of camera.
+            this.s_meshAndLms = new THREE.Object3D();
+            // s_lms stores the scene landmarks. This is a useful container to
+            // get at all landmarks in one go, and is a child of s_meshAndLms
+            this.s_lms = new THREE.Object3D();
+            this.s_meshAndLms.add(this.s_lms);
+            // s_mesh is the parent of the mesh itself in the THREE scene.
+            // This will only ever have one child (the mesh).
+            // Child of s_meshAndLms
+            this.s_mesh = new THREE.Object3D();
+            this.s_meshAndLms.add(this.s_mesh);
+            this.scene.add(this.s_meshAndLms);
+
+
+            // --- SCENE: CAMERA AND DIRECTED LIGHTS ---
+            // s_cameraAndDirLights holds the camera, and (optionally) any
+            // lights that track with the camera
+            this.s_cameraAndDirLights = new THREE.Object3D();
+            this.s_camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
+            // TODO this should be set on s_cameraAndDirLights
+            this.s_camera.position.set(500, 250, 500);
+            this.s_camera.lookAt(this.scene.position);
+            this.s_cameraAndDirLights.add(this.s_camera);
+            this.scene.add(this.s_cameraAndDirLights);
+
+            // --- SCENE: GENERAL LIGHTING ---
+            this.s_lights = new THREE.Object3D();
+            var pointLightLeft = new THREE.PointLight(0x404040, 1, 0);
+            pointLightLeft.position.set(-100, 0, 100);
+            this.s_lights.add(pointLightLeft);
+            var pointLightRight = new THREE.PointLight(0x404040, 1, 0);
+            pointLightRight.position.set(100, 0, 100);
+            this.s_lights.add(pointLightRight);
+            this.scene.add(this.s_lights);
+            // TODO probably don't need this array any more?
+            this.lights = [pointLightLeft, pointLightRight];
+
+
+            // TODO re-add non WebGL support (maybe)
             this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
-            this.camera.position.set(500, 250, 500);
-            this.camera.lookAt(this.scene.position);
             var clearColor = 0xAAAAAA;
             this.renderer.setClearColor(clearColor, 1);
             this.renderer.autoClear = false;
             //this.renderer.autoUpdateScene = false;
             this.$el.html(this.renderer.domElement);
 
-            // add lights
-            var pointLightLeft = new THREE.PointLight(0x404040, 1, 0);
-            pointLightLeft.position.set(-100, 0, 100);
-            this.scene.add(pointLightLeft);
-            var pointLightRight = new THREE.PointLight(0x404040, 1, 0);
-            pointLightRight.position.set(100, 0, 100);
-            this.scene.add(pointLightRight);
-            this.lights = [pointLightLeft, pointLightRight];
+            this.sceneHelpers = new THREE.Scene();
 
             // add model if there already is one
             var modelSrc = this.model.get('modelSrc');
@@ -82,9 +115,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     var vector = new THREE.Vector3(
                         (event.offsetX / that.$container.width()) * 2 - 1,
                         -(event.offsetY / that.$container.height()) * 2 + 1, 0.5);
-                    projector.unprojectVector(vector, that.camera);
-                    ray.set(that.camera.position,
-                        vector.sub(that.camera.position).normalize());
+                    projector.unprojectVector(vector, that.s_camera);
+                    ray.set(that.s_camera.position,
+                        vector.sub(that.s_camera.position).normalize());
                     if (object instanceof Array) {
                         return ray.intersectObjects(object, true);
                     }
@@ -110,6 +143,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         } else if (intersectionsWithLms.length > 0) {
                             landmarkPressed();
                         } else if (intersectionsWithMesh.length > 0) {
+                            console.log(that.s_meshAndLms.worldToLocal(
+                                intersectionsWithMesh[0].point));
                             meshPressed();
                         } else {
                             nothingPressed();
@@ -144,12 +179,12 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                         // now we've selected the landmark, we want to enable dragging.
                         // Fix the intersection plane to be where we clicked, only a
                         // little nearer to the camera.
-                        intersectionPlanePosition.subVectors(that.camera.position,
+                        intersectionPlanePosition.subVectors(that.s_camera.position,
                             landmarkSymbol.position);
                         intersectionPlanePosition.divideScalar(10.0);
                         intersectionPlanePosition.add(landmarkSymbol.position);
                         intersectionPlane.position.copy(intersectionPlanePosition);
-                        intersectionPlane.lookAt(that.camera.position);
+                        intersectionPlane.lookAt(that.s_camera.position);
                         intersectionPlane.updateMatrixWorld();
                         // start listening for dragging landmarks
                         $(document).on('mousemove.lmDrag', onLandmarkDrag);
@@ -210,9 +245,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                             var camToLm;
                             for (var i = 0; i < selectedLandmarks.length; i++) {
                                 lm = selectedLandmarks[i];
-                                camToLm = lm.point().clone().sub(that.camera.position).normalize();
+                                camToLm = lm.point().clone().sub(that.s_camera.position).normalize();
                                 // make the ray point from camera to this point
-                                ray.set(that.camera.position, camToLm);
+                                ray.set(that.s_camera.position, camToLm);
                                 intersectionsWithLms = ray.intersectObject(
                                     that.mesh, true);
                                 if (intersectionsWithLms.length > 0) {
@@ -243,7 +278,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             // make an empty list of landmark views
             this.landmarkViews = [];
             this.mesh = null;
-            this.cameraControls = Camera.CameraController(this.camera, this.el);
+            this.cameraControls = Camera.CameraController(this.s_camera, this.el);
             // when the camera updates, render
             this.cameraControls.on("change", that.update);
 
@@ -268,18 +303,14 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         changeModel: function () {
             console.log('Viewport: model has changed');
             // firstly, clear the scene of any existing mesh
-            // TODO currently removes landmarks and it shouldn't
             var obj, i;
-            for (i = this.scene.children.length - 1; i >= 0; i --) {
-                obj = this.scene.children[i];
-                if (!_.contains(this.lights, obj)) {
-                    // it's not a light
-                    this.scene.remove(obj);
-                }
+            for (i = this.s_meshAndLms.children.length - 1; i >= 0; i --) {
+                obj = this.s_meshAndLms.children[i];
+                this.s_meshAndLms.remove(obj);
             }
             console.log("Adding face to the scene");
             this.mesh = this.model.get('modelSrc').get('model').get('model');
-            this.scene.add(this.mesh);
+            this.s_meshAndLms.add(this.mesh);
             this.update();
         },
 
@@ -287,8 +318,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             //  build a fresh set of views - clear any existing lms
             this.landmarkViews = [];
             var that = this;
+            // TODO should this be a destructor on LandmarkView?
             _.each(this.landmarkViews, function (lmView) {
-                that.scene.remove(lmView.symbol);
+                that.modelAndLandmarks.remove(lmView.symbol);
             });
             console.log('Viewport: landmarks have changed');
             var groups = this.model.get('landmarks').get('groups');
@@ -309,16 +341,16 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.sceneHelpers.updateMatrixWorld();
             this.scene.updateMatrixWorld();
             this.renderer.clear();
-            this.renderer.render(this.scene, this.camera);
-            this.renderer.render(this.sceneHelpers, this.camera);
+            this.renderer.render(this.scene, this.s_camera);
+            this.renderer.render(this.sceneHelpers, this.s_camera);
         },
 
         resize: function () {
             var w, h;
             w = this.$container.width();
             h = this.$container.height();
-            this.camera.aspect = w / h;
-            this.camera.updateProjectionMatrix();
+            this.s_camera.aspect = w / h;
+            this.s_camera.updateProjectionMatrix();
             this.renderer.setSize(w, h);
             this.update();
         },
@@ -356,7 +388,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 // this landmark already has an allocated representation..
                 if (this.model.isEmpty()) {
                     // but it's been deleted.
-                    this.viewport.scene.remove(this.symbol);
+                    this.viewport.s_meshAndLms.remove(this.symbol);
                     this.symbol = null;
 
                 } else {
@@ -370,7 +402,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     this.symbol = this.createSphere(this.model.get('point'), 2, 1);
                     this.updateSymbol();
                     // and add it to the scene
-                    this.viewport.scene.add(this.symbol);
+                    this.viewport.s_meshAndLms.add(this.symbol);
                 }
             }
             // tell our viewport to update
@@ -395,7 +427,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         },
 
         updateSymbol: function () {
-            // TODO set colour based on group active
             this.symbol.position.copy(this.model.point());
             if (this.group.get('active') && this.model.isSelected()) {
                 this.symbol.material.color.setHex(0xff75ff);
