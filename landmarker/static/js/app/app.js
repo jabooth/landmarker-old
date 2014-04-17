@@ -1,7 +1,5 @@
-// TODO make some methods hidden (just between these three objects)
-
-
-define(['backbone', './landmark', './model'], function (Backbone, Landmark, Model) {
+define(['backbone', './landmark', './mesh'],
+    function (Backbone, Landmark, Mesh) {
 
     "use strict";
 
@@ -9,30 +7,30 @@ define(['backbone', './landmark', './model'], function (Backbone, Landmark, Mode
 
         defaults: function () {
             return {
-                modelSrc: new Model.ModelSource,
+                meshSource: new Mesh.MeshSource,
                 landmarkType: 'shiyang',
                 templateName: '.template'
             }
         },
 
         initialize: function () {
-            // retrieve the list of models.
-            _.bindAll(this, 'modelChanged');
-            var models = this.get('modelSrc');
+            // retrieve the list of meshes.
+            _.bindAll(this, 'meshChanged');
+            var meshes = this.get('meshSource');
             var that = this;
-            models.fetch({
+            meshes.fetch({
                 success: function () {
-                    var modelSrc = that.get('modelSrc');
-                    modelSrc.setModel(modelSrc.get('models').at(0));
+                    var meshSource = that.get('meshSource');
+                    meshSource.setMesh(meshSource.get('meshes').at(0));
                 }
             });
-            this.listenTo(models, 'change:model', this.modelChanged);
+            this.listenTo(meshes, 'change:mesh', this.meshChanged);
         },
 
-        modelChanged: function () {
-            console.log('model has been changed on the modelSrc!');
+        meshChanged: function () {
+            console.log('mesh has been changed on the meshSource!');
             var landmarks = new Landmark.LandmarkSet({
-                id: this.model().id,
+                id: this.mesh().id,
                 type: this.get('landmarkType')
             });
             var that = this;
@@ -50,21 +48,20 @@ define(['backbone', './landmark', './model'], function (Backbone, Landmark, Mode
                         success: function () {
                             console.log('got the template landmarks!');
                             that.set('landmarks', landmarks);
-                            landmarks.id = that.model().id;
+                            landmarks.id = that.mesh().id;
                         }
                     });
                 }
             });
         },
 
-        model: function () {
-            return this.get('modelSrc').get('model');
+        mesh: function () {
+            return this.get('meshSource').get('mesh');
         },
 
         landmarks: function () {
             return this.get('landmarks');
         }
-
     });
 
     return {

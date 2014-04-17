@@ -30,6 +30,18 @@ api = Api(app)
 models = list(mio.import_meshes(p.join(config.model_dir, '*')))
 models = {m.ioinfo.filename: m.tojson() for m in models}
 
+james = mio.import_mesh(p.join(config.model_dir, 'James_001_0005.obj'))
+import scipy.io as sio
+x = sio.loadmat("/Users/jab08/Desktop/01_MorphableModel.mat")
+mean_head = x['shapeMU']
+trilist = x['tl']
+from menpo.shape import TriMesh
+trilist[:, [0, 1]] = trilist[:, [1, 0]]
+
+model = TriMesh(mean_head.reshape([-1, 3]), trilist=trilist - 1)
+print(model.n_points)
+models["basel"] = model.tojson()
+
 
 def list_landmarks(model_id=None):
     if model_id is None:
@@ -102,8 +114,8 @@ class LandmarkListForId(Resource):
 
 
 api_endpoint = '/api/v1/'
-api.add_resource(ModelList, api_endpoint + 'models')
-api.add_resource(Model, api_endpoint + 'models/<string:model_id>')
+api.add_resource(ModelList, api_endpoint + 'meshes')
+api.add_resource(Model, api_endpoint + 'meshes/<string:model_id>')
 api.add_resource(LandmarkList, api_endpoint + 'landmarks')
 api.add_resource(LandmarkListForId, api_endpoint + 'landmarks/<string:model_id>')
 api.add_resource(Landmark, api_endpoint +

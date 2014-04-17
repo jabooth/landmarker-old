@@ -26,16 +26,27 @@ var sidebar;
 var viewport;
 
 // Start the main app logic.
-requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/model",
+requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
            "app/app", "app/viewport"],
     function($, THREE, Landmark, Sidebar, Model, App, Viewport) {
 
         "use strict";
 
         $(function () {
+
+
+
             app = new App.App;
             sidebar = new Sidebar.Sidebar({model: app});
             viewport = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
+
         });
     }
 );
+
+function addUnitSphere(viewport) {
+    var mat = new THREE.MeshPhongMaterial({color: 0x75ff75});
+    var geo = new THREE.SphereGeometry(1, 10, 10);
+    var unitsphere = new THREE.Mesh(geo, mat);
+    viewport.scene.add(unitsphere);
+}

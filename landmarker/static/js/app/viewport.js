@@ -1,4 +1,5 @@
-define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _, Backbone, THREE, Camera) {
+define(['jquery', 'underscore', 'backbone', 'three', './camera'],
+    function ($, _, Backbone, THREE, Camera) {
 
     "use strict";
 
@@ -7,7 +8,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
         id: 'viewport',
 
         initialize: function () {
-            _.bindAll(this, 'resize', 'render', 'changeMesh', 'mousedownHandler', 'update');
+            _.bindAll(this, 'resize', 'render', 'changeMesh',
+                'mousedownHandler', 'update');
             this.$container = $('#viewportContainer');
 
             this.meshScale = 1.0;  // The radius of the mesh's bounding sphere
@@ -19,7 +21,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             this.scene = new THREE.Scene();
 
             // --- SCENE: MODEL AND LANDMARKS ---
-            // s_meshAndLms stores the mesh and landmarks in the models original
+            // s_meshAndLms stores the mesh and landmarks in the meshes original
             // coordinates. This is always transformed to the unit sphere for
             // consistency of camera.
             this.s_meshAndLms = new THREE.Object3D();
@@ -64,14 +66,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             this.sceneHelpers = new THREE.Scene();
 
-            // add model if there already is one
-            var modelSrc = this.model.get('modelSrc');
-            var model;
-            if (modelSrc.has("model")) {
-                model = modelSrc.get("model");
-                if (model.has("model")) {
-                    this.changeMesh();
-                }
+            // add mesh if there already is one present (we have missed a
+            // backbone callback to changeMesh() otherwise).
+            var mesh = this.model.mesh();
+            if (mesh && mesh.t_mesh()) {
+                this.changeMesh();
             }
             var that = this;
 
@@ -88,7 +87,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                 // track what was under the mouse upon clicking
                 var PDO = {
                     NOTHING: "NOTHING",
-                    model: "mesh",
+                    mesh: "mesh",
                     landmark: "landmark"
                 };
                 var pressedDownOn = PDO.NOTHING;
@@ -153,7 +152,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
                     function meshPressed() {
                         console.log('mesh pressed!');
-                        pressedDownOn = PDO.model;
+                        pressedDownOn = PDO.mesh;
                     }
 
                     function landmarkPressed() {
@@ -226,10 +225,10 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     var p, lm, newLm;
                     if (onMouseDownPosition.distanceTo(onMouseUpPosition) < 1) {
                         // a click
-                        if (pressedDownOn === PDO.model) {
-                            //  a click on model
+                        if (pressedDownOn === PDO.mesh) {
+                            //  a click on the mesh
                             p = intersectionsWithMesh[0].point.clone();
-                            // Convert the point back into the model space
+                            // Convert the point back into the mesh space
                             that.s_meshAndLms.worldToLocal(p);
                             newLm = that.model.get('landmarks').insertNew(p);
                             if (newLm !== null) {
@@ -243,7 +242,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     } else {
                         // mouse was dragged
                         if (pressedDownOn === PDO.landmark) {
-                            // snap landmarks back onto model
+                            // snap landmarks back onto the mesh
                             var activeGroup = that.model.get('landmarks').get('groups').active();
                             var selectedLandmarks = activeGroup.landmarks().selected();
                             var camToLm;
@@ -256,11 +255,11 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                                 intersectionsWithLms = ray.intersectObject(
                                     that.s_mesh, true);
                                 if (intersectionsWithLms.length > 0) {
-                                    // good, we're still on the model.
+                                    // good, we're still on the mesh.
                                     lm.set('point', that.s_meshAndLms.worldToLocal(intersectionsWithLms[0].point.clone()));
                                     lm.set('isChanging', false);
                                 } else {
-                                    console.log("fallen off model");
+                                    console.log("fallen off mesh");
                                     // TODO add back in history!
 //                                for (i = 0; i < selectedLandmarks.length; i++) {
 //                                    selectedLandmarks[i].rollbackModifications();
@@ -289,7 +288,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
 
             // Bind event listeners
             window.addEventListener('resize', this.resize, false);
-            this.listenTo(this.model.get('modelSrc'), "change:model", this.changeMesh);
+            this.listenTo(this.model.get('meshSource'), "change:mesh", this.changeMesh);
             this.listenTo(this.model, "change:landmarks", this.changeLandmarks);
 
             // trigger resize, and register for the animation loop
@@ -316,18 +315,18 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             if (this.s_mesh.children.length) {
                 this.s_mesh.remove(this.s_mesh.children[0]);
             }
-            var mesh = this.model.get('modelSrc').get('model').get('model');
-            this.s_mesh.add(mesh);
+            var t_mesh = this.model.mesh().get('t_mesh');
+            this.s_mesh.add(t_mesh);
 
             // Now we need to rescale the s_meshAndLms to fit in the unit sphere
             // First, the scale
-            this.meshScale = mesh.geometry.boundingSphere.radius;
+            this.meshScale = t_mesh.geometry.boundingSphere.radius;
             var s = 1.0 / this.meshScale;
             this.s_meshAndLms.scale.set(s, s, s);
 
             // THREE.js applies translation AFTER scale, so need to calc
             // appropriate translation
-            var t = mesh.geometry.boundingSphere.center.clone();
+            var t = t_mesh.geometry.boundingSphere.center.clone();
             t.multiplyScalar(-1.0 * s);  // -1 as we want to centre
             this.s_meshAndLms.position = t;
             this.resetCamera();
@@ -402,7 +401,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
                     this.symbol = null;
 
                 } else {
-                    // the model may need updating. See what needs to be done
+                    // the lm may need updating. See what needs to be done
                     this.updateSymbol();
                 }
             } else {
@@ -446,33 +445,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'], function ($, _
             }
         }
     });
-
-    function Viewport(signals, $dom) {
-
-        var landmarkSet = null;  // only ever hold one landmark set
-        var landmarkSymbols = [];  // LM objects we currently have in the scene
-        var mesh = null;  // the single object we are landmarking
-
-        var landmarkSymbolToLandmark = {};
-
-
-
-        dom.addEventListener('mousedown', mouseHandlers.mouseDown, false);
-
-
-
-        var origup = camera.up.clone();
-        var origposition = camera.position.clone();
-        var originallookat = scene.position.clone();
-        signals.resetView.add(function () {
-            camera.up.copy(origup);
-            camera.position.copy(origposition);
-            camera.lookAt(originallookat);
-            render();
-        });
-
-        return $dom;
-    }
 
     return {
         ViewportTHREEView: ViewportTHREEView

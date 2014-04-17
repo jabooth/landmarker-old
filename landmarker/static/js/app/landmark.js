@@ -66,7 +66,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
     var LandmarkList = Backbone.Collection.extend({
 
-        model: Landmark,
+        t_mesh: Landmark,
 
         comparator: 'index',
 
@@ -153,7 +153,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
     var LandmarkGroupList = Backbone.Collection.extend({
 
-        model: LandmarkGroup,
+        t_mesh: LandmarkGroup,
 
         active: function () {
             return this.findWhere({active: true});
@@ -259,7 +259,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 insertedLandmark = activeGroup.landmarks().empty()[0];
                 insertedLandmark.set('point', v.clone());
                 if (activeGroup.landmarks().empty().length === 0) {
-                    // we've depleted this group! Auto-advance to the next if we can
+                    // depleted this group! Auto-advance to the next if we can
                     this.groups().advanceActiveGroup();
                 }
             }
@@ -270,8 +270,10 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             if (!options.parse) {
                 return;
             }
-            var landmarkGroupList = new LandmarkGroupList(_.map(json.groups, function (lmks, label) {
-                var lmList = new LandmarkList(_.map(lmks.landmarks, function (point) {
+            var landmarkGroupList = new LandmarkGroupList(
+                _.map(json.groups, function (lmks, label) {
+                var lmList = new LandmarkList(
+                    _.map(lmks.landmarks, function (point) {
                     var index = _.indexOf(lmks.landmarks, point);
                     if (point.point[0] === null) {
                         return new Landmark({index: index});

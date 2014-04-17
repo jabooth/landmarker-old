@@ -9,7 +9,8 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
     function pad(n, width, z) {
         z = z || '0';
         n = n + '';
-        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+        return n.length >= width ? n :
+            new Array(width - n.length + 1).join(z) + n;
     }
 
     var LandmarkView = Backbone.View.extend({
@@ -180,9 +181,9 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
     });
 
 
-    var ModelPagerView = Backbone.View.extend({
+    var MeshPagerView = Backbone.View.extend({
 
-        el: '#modelPager',
+        el: '#meshPager',
 
         initialize : function() {
             _.bindAll(this, 'render');
@@ -243,39 +244,39 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
-    var ModelInfoView = Backbone.View.extend({
+    var MeshInfoView = Backbone.View.extend({
 
-        el: '#modelInfo',
+        el: '#meshInfo',
 
         initialize : function() {
             _.bindAll(this, 'render');
-            this.listenTo(this.model, "change:model", this.render);
+            this.listenTo(this.model, "change:mesh", this.render);
         },
 
         render: function () {
-            console.log("ModelInfoView sees modelSrc.model has a change - rerender");
-            this.$el.find('#modelName').html(this.model.get('model').id);
-            var n_str = pad(this.model.get('models').length, 2);
-            var i_str = pad(this.model.modelIndex() + 1, 2);
-            this.$el.find('#modelIndex').html(i_str + "/" + n_str);
+            console.log("MeshInfoView: meshSource:mesh has a change");
+            this.$el.find('#meshName').html(this.model.mesh().id);
+            var n_str = pad(this.model.meshes().length, 2);
+            var i_str = pad(this.model.meshIndex() + 1, 2);
+            this.$el.find('#meshIndex').html(i_str + "/" + n_str);
             return this;
         },
 
         events: {
-            'click #modelName' : "chooseModelId",
-            'click #modelIndex' : "chooseModelNumber"
+            "click #meshName" : "chooseMeshName",
+            'click #meshIndex' : "chooseMeshNumber"
         },
 
-        chooseModelNumber: function () {
-            console.log('choose model number called');
+        chooseMeshNumber: function () {
+            console.log('Sidebar:chooseMeshNumber called');
         },
 
-        chooseModelId: function () {
-            console.log('choose model id called');
+        chooseMeshName: function () {
+            console.log('Sidebar:chooseMeshName called');
         },
 
         revert: function () {
-            console.log('revert called');
+            console.log('Sidebar:revert called');
         }
     });
 
@@ -283,15 +284,15 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
     var Sidebar = Backbone.View.extend({
 
         initialize : function() {
-            _.bindAll(this, "renderLandmarks", "renderModelSrc");
+            _.bindAll(this, "renderLandmarks", "renderMeshSrc");
             this.listenTo(this.model, "change:landmarks", this.renderLandmarks);
-            this.listenTo(this.model, "change:modelSrc", this.renderModelSrc);
-            this.renderModelSrc();
+            this.listenTo(this.model, "change:meshSource", this.renderMeshSrc);
+            this.renderMeshSrc();
         },
 
-        renderModelSrc: function () {
-            new ModelPagerView({model: this.model.get('modelSrc')});
-            new ModelInfoView({model: this.model.get('modelSrc')});
+        renderMeshSrc: function () {
+            new MeshPagerView({model: this.model.get('meshSource')});
+            new MeshInfoView({model: this.model.get('meshSource')});
         },
 
         renderLandmarks: function () {
@@ -311,7 +312,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         LandmarkGroupButtonView: LandmarkGroupButtonView,
         LandmarkGroupView: LandmarkGroupView,
         LandmarkGroupListView: LandmarkGroupListView,
-        ModelPagerView: ModelPagerView,
+        ModelPagerView: MeshPagerView,
         SaveRevertView: SaveRevertView,
         Sidebar: Sidebar
     }
