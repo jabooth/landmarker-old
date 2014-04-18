@@ -135,7 +135,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                             // degenerate case - which is closer?
                             if (intersectionsWithLms[0].distance <
                                 intersectionsWithMesh[0].distance) {
-                                landmarkPressed();
+                                landmarkPressed(event);
                             } else {
                                 meshPressed();
                             }
@@ -155,7 +155,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                         pressedDownOn = PDO.mesh;
                     }
 
-                    function landmarkPressed() {
+                    function landmarkPressed(event) {
                         console.log('landmark pressed!');
                         // before anything else, disable the camera
                         that.cameraControls.disable();
@@ -171,7 +171,16 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                             }
                         }
                         group.makeActive();
-                        landmark.select();
+                        if ((event.ctrlKey || event.metaKey)) {
+                            if(landmark.isSelected()) {
+                                landmark.deselect();
+                            } else {
+                                landmark.select();
+                            }
+                        } else {
+                            landmark.collection.deselectAll();
+                            landmark.select();
+                        }
                         // now we've selected the landmark, we want to enable dragging.
                         // Fix the intersection plane to be where we clicked, only a
                         // little nearer to the camera.
@@ -394,7 +403,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
     var LandmarkTHREEView = Backbone.View.extend({
 
         initialize: function (options) {
-            this.listenTo(this.model, "all", this.render);
+            this.listenTo(this.model, "change", this.render);
             this.group = options.group;
             this.viewport = options.viewport;
             this.listenTo(this.group, "change:active", this.render);

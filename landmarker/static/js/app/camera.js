@@ -35,7 +35,7 @@ define(['jquery', 'underscore', 'backbone', 'three'], function ($, _, Backbone, 
         var ROTATION_SENSITIVITY = 0.005;
 
         // internals
-        var enabled = true;
+        var enabled = false; // note that we will enable on creation below!
         var tvec = new THREE.Vector3();  // a temporary vector for efficient maths
         var tinput = new THREE.Vector3(); // temp vec used for
 
@@ -183,10 +183,12 @@ define(['jquery', 'underscore', 'backbone', 'three'], function ($, _, Backbone, 
         }
 
         function enable () {
-            console.log('camera: enable');
-            enabled = true;
-            $(domElement).on('mousedown.camera', onMouseDown);
-            $(domElement).on('wheel.camera', onMouseWheel);
+            if (!enabled) {
+                console.log('camera: enable');
+                enabled = true;
+                $(domElement).on('mousedown.camera', onMouseDown);
+                $(domElement).on('wheel.camera', onMouseWheel);
+            }
         }
 
 //        // touch

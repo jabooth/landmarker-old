@@ -45,14 +45,17 @@ requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
                 case 100:  // d
                     app.landmarks().deleteSelected();
                     break;
-                case 32:  // space bar
+                case 32:  // space bar = reset camera
                     viewport.resetCamera();
                     break;
-                case 116:  // t = texture toggle
+                case 116:  // t = [T]exture toggle
                     app.mesh().textureToggle();
                     break;
-                case 119:  // w = wireframe toggle
+                case 119:  // w = [W]ireframe toggle
                     app.mesh().wireframeToggle();
+                    break;
+                case 97:  // a = select [A]ll
+                    app.landmarks().selectAllInActiveGroup();
                     break;
             }
         });

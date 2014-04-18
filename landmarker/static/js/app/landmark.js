@@ -17,11 +17,16 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         },
 
         select: function () {
-            return this.set('selected', true);
+            if (!this.isEmpty() && !this.isSelected()) {
+                this.set('selected', true);
+            }
+            return this;
         },
 
         deselect: function () {
-            return this.set('selected', false);
+            if(this.isSelected()) {
+                return this.set('selected', false);
+            }
         },
 
         isSelected: function () {
@@ -272,6 +277,10 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             _.each(lms, function (lm) {
                 lm.clear();
             });
+        },
+
+        selectAllInActiveGroup: function () {
+            this.groups().active().landmarks().selectAll();
         },
 
         parse: function (json, options) {

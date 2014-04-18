@@ -18,18 +18,18 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         template: _.template($("#trTemplate").html()),
 
         events: {
-            "click" : "select"
+            "click": "select"
         },
 
         id: function () {
             return 'lm' + this.model.get('index');
         },
 
-        initialize: function() {
+        initialize: function () {
             this.listenTo(this.model, 'change', this.render);
         },
 
-        render: function() {
+        render: function () {
 
             function xyziForLandmark(lm) {
                 var p;
@@ -50,6 +50,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
                     };
                 }
             }
+
             var html = $(this.template(xyziForLandmark(this.model)));
             html.toggleClass("Table-Row-Odd", this.model.get('index') % 2 === 1);
             html.toggleClass("Table-Cell-Selected", this.model.isSelected());
@@ -62,12 +63,19 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             return this;
         },
 
-        select: function(event) {
-            console.log('selected!');
-            if (!(event.ctrlKey || event.metaKey)) {
+        select: function (event) {
+            if (event.shiftKey) {
+                // shift takes precedence.
+            } else if ((event.ctrlKey || event.metaKey)) {
+                if (this.model.isSelected()) {
+                    this.model.deselect();
+                } else {
+                    this.model.select();
+                }
+            } else {
                 this.model.collection.deselectAll();
+                this.model.select();
             }
-            this.model.select();
         }
     });
 
