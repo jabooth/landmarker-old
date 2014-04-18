@@ -53,6 +53,14 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             this.set('textureOn', false);
         },
 
+        textureToggle: function () {
+            if (this.isTextureOn()) {
+                this.textureOff();
+            } else {
+                this.textureOn();
+            }
+        },
+
         wireframeOn: function() {
             if (this.isWireframeOn()) {
                 return;
@@ -67,6 +75,14 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             }
             this.t_mesh().material.wireframe = false;
             this.set('wireframeOn', false);
+        },
+
+        wireframeToggle: function () {
+            if (this.isWireframeOn()) {
+                this.wireframeOff();
+            } else {
+                this.wireframeOn();
+            }
         },
 
         toJSON: function () {

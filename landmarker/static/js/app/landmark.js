@@ -17,8 +17,6 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         },
 
         select: function () {
-            this.collection.deselectAll();
-            // TODO enable multiple selection here
             return this.set('selected', true);
         },
 
@@ -46,7 +44,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
         clear: function() {
             this.set({
-                point: null
+                point: null,
+                selected: false
             });
         },
 
@@ -255,6 +254,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             var activeGroup = this.groups().active();
             var insertedLandmark = null;
             if (activeGroup.landmarks().empty().length !== 0) {
+                // get rid of current selection
+                activeGroup.landmarks().deselectAll();
                 // get the first empty landmark and set it
                 insertedLandmark = activeGroup.landmarks().empty()[0];
                 insertedLandmark.set('point', v.clone());
@@ -264,6 +265,13 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 }
             }
             return insertedLandmark;
+        },
+
+        deleteSelected: function () {
+            var lms = this.groups().active().landmarks().selected();
+            _.each(lms, function (lm) {
+                lm.clear();
+            });
         },
 
         parse: function (json, options) {

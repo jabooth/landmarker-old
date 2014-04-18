@@ -307,6 +307,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
         resetCamera: function () {
             this.s_camera.position.set(1.68, 0.35, 3.0);
             this.s_camera.lookAt(this.scene.position);
+            this.update();
         },
 
         changeMesh: function () {
@@ -365,7 +366,9 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
 
         // this is called whenever there is a state change on the THREE scene
         update: function () {
-            console.log("Viewport:update called");
+            if (!this.renderer) {
+                return;
+            }
             this.renderer.clear();
             this.renderer.render(this.scene, this.s_camera);
             this.renderer.render(this.sceneHelpers, this.s_camera);

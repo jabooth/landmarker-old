@@ -62,8 +62,11 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             return this;
         },
 
-        select: function() {
+        select: function(event) {
             console.log('selected!');
+            if (!(event.ctrlKey || event.metaKey)) {
+                this.model.collection.deselectAll();
+            }
             this.model.select();
         }
     });

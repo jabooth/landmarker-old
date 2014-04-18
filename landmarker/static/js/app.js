@@ -38,6 +38,25 @@ requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
             sidebar = new Sidebar.Sidebar({model: app});
             viewport = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
             toolbar = new Toolbar.Toolbar({model: app.get('meshSource')});
+
+        $(window).keypress(function(e) {
+            var key = e.which;
+            switch (key) {
+                case 100:  // d
+                    app.landmarks().deleteSelected();
+                    break;
+                case 32:  // space bar
+                    viewport.resetCamera();
+                    break;
+                case 116:  // t = texture toggle
+                    app.mesh().textureToggle();
+                    break;
+                case 119:  // w = wireframe toggle
+                    app.mesh().wireframeToggle();
+                    break;
+            }
+        });
+
         });
     }
 );

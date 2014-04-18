@@ -53,11 +53,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             if (!this.mesh) {
                 return;
             }
-            if (this.mesh.isTextureOn()) {
-                this.mesh.textureOff();
-            } else {
-                this.mesh.textureOn();
-            }
+            this.mesh.textureToggle();
         },
 
         wireframeToggle: function () {
@@ -65,11 +61,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             if (!this.mesh) {
                 return;
             }
-            if (this.mesh.isWireframeOn()) {
-                this.mesh.wireframeOff();
-            } else {
-                this.mesh.wireframeOn();
-            }
+            this.mesh.wireframeToggle();
         }
 
     });
