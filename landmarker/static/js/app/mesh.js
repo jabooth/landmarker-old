@@ -17,40 +17,56 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             return this.has('texture');
         },
 
-        textureOff: function() {
-            if (this.hasTexture()) {
-                var wf = this.isWireframeOn();
-                this.t_mesh().material = basicMaterial;
-                if (wf) {
-                    this.wireframeOn();
-                } else {
-                    this.wireframeOff();
-                }
-            }
-        },
-
-        textureOn: function() {
-            if (this.hasTexture()) {
-                var wf = this.isWireframeOn();
-                this.t_mesh().material = this.get('texture');
-                if (wf) {
-                    this.wireframeOn();
-                } else {
-                    this.wireframeOff();
-                }
-            }
+        isTextureOn: function () {
+            return this.hasTexture() && this.get('textureOn');
         },
 
         isWireframeOn: function () {
             return this.t_mesh().material.wireframe;
         },
 
+        textureOn: function() {
+            if (this.isTextureOn() || !this.hasTexture()) {
+                return;  // texture already off or no texture
+            }
+            var wf = this.isWireframeOn();
+            this.t_mesh().material = this.get('texture');
+            if (wf) {
+                this.wireframeOn();
+            } else {
+                this.wireframeOff();
+            }
+            this.set('textureOn', true);
+        },
+
+        textureOff: function() {
+            if (!this.isTextureOn()) {
+                return;  // texture already on
+            }
+            var wf = this.isWireframeOn();
+            this.t_mesh().material = basicMaterial;
+            if (wf) {
+                this.wireframeOn();
+            } else {
+                this.wireframeOff();
+            }
+            this.set('textureOn', false);
+        },
+
         wireframeOn: function() {
-           this.t_mesh().material.wireframe = true;
+            if (this.isWireframeOn()) {
+                return;
+            }
+            this.t_mesh().material.wireframe = true;
+            this.set('wireframeOn', true);
         },
 
         wireframeOff: function() {
+            if (!this.isWireframeOn()) {
+                return;
+            }
             this.t_mesh().material.wireframe = false;
+            this.set('wireframeOn', false);
         },
 
         toJSON: function () {
@@ -100,7 +116,8 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
                 }
                 result = {
                     t_mesh: new THREE.Mesh(geometry, material),
-                    texture: material
+                    texture: material,
+                    textureOn: true
                 };
             } else {
                 // default to basic Phong lighting

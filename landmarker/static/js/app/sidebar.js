@@ -148,7 +148,7 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             this.$el.append(button.render().$el);
             if (this.model.get('active')) {
                 landmarkTable = new LandmarkListView(
-                    {collection: this.model.landmarks()})
+                    {collection: this.model.landmarks()});
                 this.$el.append(landmarkTable.render().$el);
             }
             return this;

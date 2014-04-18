@@ -24,11 +24,12 @@ requirejs.config({
 var app;
 var sidebar;
 var viewport;
+var toolbar;
 
 // Start the main app logic.
 requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
-           "app/app", "app/viewport"],
-    function($, THREE, Landmark, Sidebar, Model, App, Viewport) {
+           "app/app", "app/viewport", "app/toolbar"],
+    function($, THREE, Landmark, Sidebar, Model, App, Viewport, Toolbar) {
 
         "use strict";
 
@@ -36,6 +37,7 @@ requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
             app = new App.App;
             sidebar = new Sidebar.Sidebar({model: app});
             viewport = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
+            toolbar = new Toolbar.Toolbar({model: app.get('meshSource')});
         });
     }
 );

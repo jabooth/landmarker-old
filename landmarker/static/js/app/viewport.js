@@ -311,6 +311,13 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
 
         changeMesh: function () {
             console.log('Viewport: mesh has changed');
+            if (this.mesh) {
+                console.log('stopping listening to previous mesh');
+                this.stopListening(this.mesh);
+            }
+            console.log('listening to new mesh');
+            this.listenTo(this.model.mesh(), "all", this.update);
+            this.mesh = this.model.mesh();
             // firstly, remove any existing mesh
             if (this.s_mesh.children.length) {
                 this.s_mesh.remove(this.s_mesh.children[0]);
@@ -358,6 +365,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
 
         // this is called whenever there is a state change on the THREE scene
         update: function () {
+            console.log("Viewport:update called");
             this.renderer.clear();
             this.renderer.render(this.scene, this.s_camera);
             this.renderer.render(this.sceneHelpers, this.s_camera);

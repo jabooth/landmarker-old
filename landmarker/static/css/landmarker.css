@@ -138,6 +138,17 @@ is itself a row flexbox */
     background: #0A4EB2;
 }
 
+.Button-Toolbar {
+    background: #2D77C2;
+    color: white;
+}
+
+.Button-Toolbar-On {
+    font-weight: bold;
+    background: #0A4EB2;
+}
+
+
 .Button-Save {
     color: white;
     background: #5FB632;
