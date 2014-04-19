@@ -13,6 +13,8 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
             new Array(width - n.length + 1).join(z) + n;
     }
 
+    // Renders a single Landmark. Should update when constituent landmark
+    // updates and that's it.
     var LandmarkView = Backbone.View.extend({
 
         template: _.template($("#trTemplate").html()),
@@ -30,7 +32,8 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         render: function () {
-
+            console.log("Landmark:render - " + this.model.get('index') +
+            "(" + this.cid + ", " + this.model.cid + ")");
             function xyziForLandmark(lm) {
                 var p;
                 if (lm.isEmpty()) {
@@ -79,8 +82,9 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
-
-    // TODO listen to subview selections, deselect rest
+    // Renders the LandmarkList. Don't think this ListView should ever have to
+    // render (as we build a fresh View each time a group is activated
+    // and de-activated)
     var LandmarkListView = Backbone.View.extend({
 
         template: _.template($("#tableHeader").html()),
@@ -90,9 +94,11 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         initialize : function() {
             _.bindAll(this, 'render', 'renderOne');
             this.listenTo(this.collection, "reset", this.render);
+            this.lmViews = [];
         },
 
         render: function() {
+            this.cleanup();
             this.$el.empty();
             this.$el.append(this.template());
             this.collection.each(this.renderOne);
@@ -100,15 +106,24 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         renderOne : function(model) {
+            console.log("NEW: LandmarkView (LandmarkList.renderOne())");
             var row = new LandmarkView({model:model});
             // reset the view's element to it's template
             this.$el.append(row.render().$el);
+            this.lmViews.push(row);
             return this;
+        },
+
+        cleanup: function () {
+            // remove any views we already have bound
+            _.each(this.lmViews, function(lm) {lm.remove()});
+            this.lmViews = [];
         }
 
     });
 
-
+    // Renders the LandmarkGroup header. Needs to re-render on active change or
+    // whenever a Landmark is filled in or not.
     var LandmarkGroupButtonView = Backbone.View.extend({
 
         tagName: "button",
@@ -116,20 +131,21 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         className: "Button-LandmarkGroup",
 
         events: {
-            'click' : "makeActive"
+            'click' : "activate"
         },
 
-        makeActive: function () {
-            this.model.makeActive();
+        activate: function () {
+            this.model.activate();
         },
 
         initialize : function() {
             _.bindAll(this, 'render');
-            this.listenTo(this.model, "all", this.render);
-            this.listenTo(this.model.get('landmarks'), "all", this.render);
+            this.listenTo(this.model, "change:active", this.render);
+            this.listenTo(this.model.get('landmarks'), "change:isEmpty", this.render);
         },
 
         render: function () {
+            console.log('GroupButton:render - ' + this.model.get('label'));
             var lms = this.model.get('landmarks');
             var nonempty_str = pad(lms.nonempty().length, 2);
             var lms_str = pad(lms.length, 2);
@@ -141,7 +157,9 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         }
     });
 
-
+    // Renders a single LandmarkGroup. Either the view is closed and we just
+    // render the header (LandmarkGroupButtonView) or this group is active and
+    // we render all the landmarks (LandmarkListView) as well as the header.
     var LandmarkGroupView = Backbone.View.extend({
 
         // TODO make this a useful div
@@ -150,23 +168,43 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         initialize : function() {
             _.bindAll(this, 'render');
             this.listenTo(this.model, "all", this.render);
+            this.landmarkTable = null;
+            this.buton = null
         },
 
         render: function () {
-            var button = new LandmarkGroupButtonView({model:this.model});
-            var landmarkTable;
+            this.cleanup();
+            this.button = new LandmarkGroupButtonView({model:this.model});
             this.$el.empty();
-            this.$el.append(button.render().$el);
+            this.$el.append(this.button.render().$el);
             if (this.model.get('active')) {
-                landmarkTable = new LandmarkListView(
+                console.log("NEW: LandmarkListView (LandmarkGroupView.render())");
+                this.landmarkTable = new LandmarkListView(
                     {collection: this.model.landmarks()});
-                this.$el.append(landmarkTable.render().$el);
+                this.$el.append(this.landmarkTable.render().$el);
             }
             return this;
+        },
+
+        cleanup: function () {
+            if (this.landmarkTable) {
+                // already have a list view! clean it up + remove
+                this.landmarkTable.cleanup();
+                this.landmarkTable.remove();
+                this.landmarkTable = null;
+            }
+            if (this.button) {
+                // already have a button view! remove
+                this.button.remove();
+                this.button = null;
+            }
         }
     });
 
 
+    // Renders a collection of LandmarkGroups. At any one time one of these
+    // will be expanded - the rest closed. This View is indifferent - it just
+    // builds LandmarkGroupView's and asks them to render in turn.
     var LandmarkGroupListView = Backbone.View.extend({
 
         // TODO make this a useful div
@@ -174,19 +212,31 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         initialize : function() {
             _.bindAll(this, 'render', 'renderOne');
             this.listenTo(this.collection, "reset", this.render);
+            this.groups = [];
         },
 
         render: function() {
+            this.cleanup();
             this.$el.empty();
             this.collection.each(this.renderOne);
             return this;
         },
 
         renderOne : function(model) {
+            console.log("NEW: LandmarkGroupView (LandmarkGroupListView.renderOne())");
             var group = new LandmarkGroupView({model:model});
             // reset the view's element to it's template
             this.$el.append(group.render().$el);
+            this.groups.push(group);
             return this;
+        },
+
+        cleanup: function () {
+            _.each(this.groups, function(group) {
+                group.cleanup();
+                group.remove();
+            });
+            this.groups = [];
         }
 
     });

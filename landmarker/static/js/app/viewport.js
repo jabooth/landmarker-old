@@ -170,7 +170,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                                 group = that.landmarkViews[i].group;
                             }
                         }
-                        group.makeActive();
+                        group.activate();
                         if ((event.ctrlKey || event.metaKey)) {
                             if(landmark.isSelected()) {
                                 landmark.deselect();
@@ -222,8 +222,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                             lm = selectedLandmarks[i];
                             lmP = lm.point().clone();
                             lmP.add(deltaLmDrag);
-                            if (!lm.get('isChanging')) lm.set('isChanging', true);
-                            lm.set('point', lmP);
+                            //if (!lm.get('isChanging')) lm.set('isChanging', true);
+                            lm.setPoint(lmP);
                         }
                         that.model.dispatcher().disableBatchRender();
                     }
@@ -242,10 +242,6 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                             // Convert the point back into the mesh space
                             that.s_meshAndLms.worldToLocal(p);
                             newLm = that.model.get('landmarks').insertNew(p);
-                            if (newLm !== null) {
-                                // inserted a new landmark, select it
-                                newLm.select();
-                            }
                         } else if (pressedDownOn === PDO.NOTHING) {
                             // a click on nothing - deselect all
                             that.model.get('landmarks').get('groups').deselectAll();
@@ -267,7 +263,8 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                                     that.s_mesh, true);
                                 if (intersectionsWithLms.length > 0) {
                                     // good, we're still on the mesh.
-                                    lm.set('point', that.s_meshAndLms.worldToLocal(intersectionsWithLms[0].point.clone()));
+                                    lm.setPoint(that.s_meshAndLms.worldToLocal(
+                                        intersectionsWithLms[0].point.clone()));
                                     lm.set('isChanging', false);
                                 } else {
                                     console.log("fallen off mesh");

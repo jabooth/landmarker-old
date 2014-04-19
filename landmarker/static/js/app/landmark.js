@@ -12,8 +12,19 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             }
         },
 
+        initialize: function () {
+            this.set('isEmpty', this.isEmpty());
+        },
+
         point: function() {
             return this.get('point');
+        },
+
+        setPoint: function (p) {
+            this.set('point', p);
+            if (this.get('isEmpty')) {
+                this.set('isEmpty', false);
+            }
         },
 
         select: function () {
@@ -50,7 +61,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         clear: function() {
             this.set({
                 point: null,
-                selected: false
+                selected: false,
+                isEmpty: true
             });
         },
 
@@ -129,9 +141,21 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             };
         },
 
-        makeActive: function () {
-            this.collection.deactivateAll();
-            this.set('active', true);
+        isActive: function () {
+            return this.get('active');
+        },
+
+        activate: function () {
+            if (!this.isActive()) {
+                this.collection.deactivateAll();
+                this.set('active', true);
+            }
+        },
+
+        deactivate: function () {
+            if (this.isActive()) {
+                this.set('active', false);
+            }
         },
 
         label: function () {
@@ -193,7 +217,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
         deactivateAll: function () {
             this.each(function(group) {
-                group.set('active', false);
+                group.deactivate();
             });
         },
 
@@ -263,7 +287,12 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 activeGroup.landmarks().deselectAll();
                 // get the first empty landmark and set it
                 insertedLandmark = activeGroup.landmarks().empty()[0];
-                insertedLandmark.set('point', v.clone());
+                // TODO this is explicit for efficiency - does it help?
+                insertedLandmark.set({
+                    point: v.clone(),
+                    selected: true,
+                    isEmpty: false
+                });
                 if (activeGroup.landmarks().empty().length === 0) {
                     // depleted this group! Auto-advance to the next if we can
                     this.groups().advanceActiveGroup();
@@ -308,7 +337,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 }));
                 return new LandmarkGroup({landmarks: lmList, label: label});
             }));
-            landmarkGroupList.at(0).makeActive();
+            landmarkGroupList.at(0).activate();
             return {groups: landmarkGroupList};
         },
 
