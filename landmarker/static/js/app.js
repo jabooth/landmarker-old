@@ -27,16 +27,22 @@ var viewport;
 var toolbar;
 
 // Start the main app logic.
-requirejs(["jquery", "three", "app/landmark", "app/sidebar", "app/mesh",
+requirejs(["jquery", "three",
+           "app/landmark", "app/sidebar",
            "app/app", "app/viewport", "app/toolbar"],
-    function($, THREE, Landmark, Sidebar, Model, App, Viewport, Toolbar) {
+    function($, THREE, Landmark, Sidebar, App, Viewport, Toolbar) {
 
         "use strict";
 
         $(function () {
             app = new App.App;
             sidebar = new Sidebar.Sidebar({model: app});
-            viewport = new Viewport.ViewportTHREEView({model: app, el: $('#viewport')});
+            viewport = new Viewport.ViewportTHREEView(
+                {
+                    model: app,
+                    el: $('#viewport')
+                });
+
             toolbar = new Toolbar.Toolbar({model: app.get('meshSource')});
 
         $(window).keypress(function(e) {

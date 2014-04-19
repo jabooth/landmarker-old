@@ -217,6 +217,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                         var activeGroup = that.model.get('landmarks').get('groups').active();
                         var selectedLandmarks = activeGroup.landmarks().selected();
                         var lm, lmP;
+                        that.model.dispatcher().enableBatchRender();
                         for (var i = 0; i < selectedLandmarks.length; i++) {
                             lm = selectedLandmarks[i];
                             lmP = lm.point().clone();
@@ -224,6 +225,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
                             if (!lm.get('isChanging')) lm.set('isChanging', true);
                             lm.set('point', lmP);
                         }
+                        that.model.dispatcher().disableBatchRender();
                     }
                 };
 
@@ -299,6 +301,7 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
             window.addEventListener('resize', this.resize, false);
             this.listenTo(this.model.get('meshSource'), "change:mesh", this.changeMesh);
             this.listenTo(this.model, "change:landmarks", this.changeLandmarks);
+            this.listenTo(this.model.dispatcher(), "change:BATCH_RENDER", this.batchHandler);
 
             // trigger resize, and register for the animation loop
             this.resize();
@@ -373,11 +376,23 @@ define(['jquery', 'underscore', 'backbone', 'three', './camera'],
             })
         },
 
+        batchHandler: function (dispatcher) {
+            if (!dispatcher.isBatchRenderEnabled()) {
+                // just been turned off - trigger an update.
+                this.update();
+            }
+        },
+
         // this is called whenever there is a state change on the THREE scene
         update: function () {
             if (!this.renderer) {
                 return;
             }
+            // if in batch mode - noop.
+            if (this.model.dispatcher().isBatchRenderEnabled()) {
+                return;
+            }
+            //console.log('Viewport:update');
             this.renderer.clear();
             this.renderer.render(this.scene, this.s_camera);
             this.renderer.render(this.sceneHelpers, this.s_camera);

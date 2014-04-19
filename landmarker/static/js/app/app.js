@@ -1,5 +1,5 @@
-define(['backbone', './landmark', './mesh'],
-    function (Backbone, Landmark, Mesh) {
+define(['backbone', './landmark', './mesh', './dispatcher'],
+    function (Backbone, Landmark, Mesh, Dispatcher) {
 
     "use strict";
 
@@ -14,8 +14,9 @@ define(['backbone', './landmark', './mesh'],
         },
 
         initialize: function () {
-            // retrieve the list of meshes.
+            this.set('dispatcher', new Dispatcher.Dispatcher);
             _.bindAll(this, 'meshChanged');
+            // retrieve the list of meshes.
             var meshes = this.get('meshSource');
             var that = this;
             meshes.fetch({
@@ -25,6 +26,10 @@ define(['backbone', './landmark', './mesh'],
                 }
             });
             this.listenTo(meshes, 'change:mesh', this.meshChanged);
+        },
+
+        dispatcher: function () {
+            return this.get('dispatcher');
         },
 
         meshChanged: function () {
