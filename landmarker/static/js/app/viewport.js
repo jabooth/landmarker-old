@@ -18,7 +18,7 @@ var Viewport = Backbone.View.extend({
 
         // TODO bind all methods on the Viewport
         _.bindAll(this, 'resize', 'render', 'changeMesh',
-            'mousedownHandler', 'update');
+            'mousedownHandler', 'update', 'lmViewsInSelectionBox');
 
         // ----- DOM ----- //
         // We have three DOM concerns:
@@ -102,6 +102,11 @@ var Viewport = Backbone.View.extend({
         // when the camera updates, render
         this.cameraControls.on("change", this.update);
 
+
+        // Tools for moving betweens screen and world coordinates
+        this.ray = new THREE.Raycaster();
+        this.projector = new THREE.Projector();
+
         // ----- MOUSE HANDLER ----- //
         // There is quite a lot of finicky state in handling the mouse
         // interaction which is of no concern to the rest of the viewport.
@@ -129,27 +134,7 @@ var Viewport = Backbone.View.extend({
             new THREE.PlaneGeometry(100, 100));
         intersectionPlane.visible = false;
         that.sceneHelpers.add(intersectionPlane);
-        var ray = new THREE.Raycaster();
-        var projector = new THREE.Projector();
 
-        // ----- EVENTS ----- //
-        // General function for finding intersections from a mouse click event
-        // to some group of objects in s_scene.
-        var getIntersects = function (event, object) {
-            if (object === null || object.length === 0) {
-                return [];
-            }
-            var vector = new THREE.Vector3(
-                (event.offsetX / that.$container.width()) * 2 - 1,
-                -(event.offsetY / that.$container.height()) * 2 + 1, 0.5);
-            projector.unprojectVector(vector, that.s_camera);
-            ray.set(that.s_camera.position,
-                vector.sub(that.s_camera.position).normalize());
-            if (object instanceof Array) {
-                return ray.intersectObjects(object, true);
-            }
-            return ray.intersectObject(object, true);
-        };
 
         // Catch all for mouse interaction. This is what is bound on the canvas
         // and delegates to various other mouse handlers once it figures out
@@ -163,8 +148,8 @@ var Viewport = Backbone.View.extend({
             }
             // All other interactions require interactions to
             // distinguish - calculate here.
-            intersectionsWithLms = getIntersects(event, that.s_lms);
-            intersectionsWithMesh = getIntersects(event, that.s_mesh);
+            intersectionsWithLms = that.getIntersectsFromEvent(event, that.s_lms);
+            intersectionsWithMesh = that.getIntersectsFromEvent(event, that.s_mesh);
             if (event.button === 0) {  // left mouse button
                 if (intersectionsWithLms.length > 0 &&
                     intersectionsWithMesh.length > 0) {
@@ -249,7 +234,8 @@ var Viewport = Backbone.View.extend({
 
         var landmarkOnDrag = function (event) {
             console.log("drag");
-            intersectionsOnPlane = getIntersects(event, intersectionPlane);
+            intersectionsOnPlane = that.getIntersectsFromEvent(event,
+                intersectionPlane);
             if (intersectionsOnPlane.length > 0) {
                 var intersectMeshSpace = intersectionsOnPlane[0].point.clone();
                 var prevIntersectInMeshSpace = positionLmDrag.clone();
@@ -286,14 +272,52 @@ var Viewport = Backbone.View.extend({
             var y = onMouseDownPosition.y;
             var dx = newX - x;
             var dy = newY - y;
-            that.ctx.fillRect(x, y, dx, dy);
+            that.ctx.strokeRect(x, y, dx, dy);
         };
 
         var shiftOnMouseUp = function (event) {
             that.cameraControls.enable();
             console.log("shift:up");
             $(document).off('mousemove.shiftDrag', shiftOnDrag);
-            onMouseUpPosition.set(event.offsetX, event.offsetY);
+            var x1 = onMouseDownPosition.x;
+            var y1 = onMouseDownPosition.y;
+            var x2 = event.clientX;
+            var y2 = event.clientY;
+            var min_x, max_x, min_y, max_y;
+            if (x1 < x2) {
+                min_x = x1;
+                max_x = x2;
+            } else {
+                min_x = x2;
+                max_x = x1;
+            }
+            if (y1 < y2) {
+                min_y = y1;
+                max_y = y2;
+            } else {
+                min_y = y2;
+                max_y = y1;
+            }
+            // First, let's just find all the landamarks that in screen space
+            // are within our selection.
+            var lms = that.lmViewsInSelectionBox(min_x, min_y,
+                                                 max_x, max_y);
+
+            // Of these, filter out the ones which are visible (not obscured)
+            var visibleLms = [];
+            _.each(lms, function(lm) {
+                if (that.lmViewVisible(lm)) {
+                    visibleLms.push(lm);
+                }
+            });
+
+            console.log(visibleLms.length);
+            _.each(visibleLms, function (lm) {
+                lm.model.select();
+            });
+
+
+
             that.clearCanvas();
         };
 
@@ -334,9 +358,9 @@ var Viewport = Backbone.View.extend({
                     lm = selectedLandmarks[i];
                     camToLm = that.s_meshAndLms.localToWorld(lm.point().clone()).sub(
                         that.s_camera.position).normalize();
-                    // make the ray point from camera to this point
-                    ray.set(that.s_camera.position, camToLm);
-                    intersectionsWithLms = ray.intersectObject(
+                    // make the ray points from camera to this point
+                    that.ray.set(that.s_camera.position, camToLm);
+                    intersectionsWithLms = that.ray.intersectObject(
                         that.s_mesh, true);
                     if (intersectionsWithLms.length > 0) {
                         // good, we're still on the mesh.
@@ -373,6 +397,71 @@ var Viewport = Backbone.View.extend({
         function animate() {
             requestAnimationFrame(animate);
         }
+    },
+
+    // ----- EVENTS ----- //
+    // General function for finding intersections from a mouse click event
+    // to some group of objects in s_scene.
+    getIntersects: function (x, y, object) {
+        if (object === null || object.length === 0) {
+            return [];
+        }
+        var vector = new THREE.Vector3(
+                (x / this.$container.width()) * 2 - 1,
+                -(y / this.$container.height()) * 2 + 1, 0);
+        this.projector.unprojectVector(vector, this.s_camera);
+        this.ray.set(this.s_camera.position,
+            vector.sub(this.s_camera.position).normalize());
+        if (object instanceof Array) {
+            return this.ray.intersectObjects(object, true);
+        }
+        return this.ray.intersectObject(object, true);
+    },
+
+    getIntersectsFromEvent: function (event, object) {
+      return this.getIntersects(event.offsetX, event.offsetY, object);
+    },
+
+    worldToScreen: function (vector) {
+        var widthHalf = this.$container.width() / 2;
+        var heightHalf = this.$container.height() / 2;
+        var result = this.projector.projectVector(vector.clone(), this.s_camera);
+        result.x = (result.x * widthHalf) + widthHalf;
+        result.y = -(result.y * heightHalf) + heightHalf;
+        return result;
+    },
+
+    lmToScreen: function (lmSymbol) {
+        var pos = lmSymbol.position.clone();
+        this.s_meshAndLms.localToWorld(pos);
+        return this.worldToScreen(pos);
+    },
+
+    lmViewsInSelectionBox: function (x1, y1, x2, y2) {
+        var c;
+        var lmsInBox = [];
+        var that = this;
+        _.each(this.landmarkViews, function (lmView) {
+            if (lmView.symbol) {
+                c = that.lmToScreen(lmView.symbol);
+                if (c.x > x1 && c.x < x2 && c.y > y1 && c.y < y2) {
+                    lmsInBox.push(lmView);
+                }
+            }
+
+        });
+        return lmsInBox;
+    },
+
+    lmViewVisible: function (lmView) {
+        if (!lmView.symbol) {
+            return false;
+        }
+        var screenCoords = this.lmToScreen(lmView.symbol);
+        var i = this.getIntersects(screenCoords.x, screenCoords.y,
+            [this.s_mesh, lmView.symbol]);
+        // is the nearest intersection the one we want?
+        return (i[0].object === lmView.symbol)
     },
 
     events: {
