@@ -276,12 +276,16 @@ var Viewport = Backbone.View.extend({
 
         var shiftOnDrag = function (event) {
             console.log("shift:drag");
+            // note - we use client as we don't want to jump back to zero
+            // if user drags into sidebar!
+            var newX = event.clientX;
+            var newY = event.clientY;
             // clear the canvas and draw a selection rect.
             that.clearCanvas();
             var x = onMouseDownPosition.x;
             var y = onMouseDownPosition.y;
-            var dx = event.offsetX - x;
-            var dy = event.offsetY - y;
+            var dx = newX - x;
+            var dy = newY - y;
             that.ctx.fillRect(x, y, dx, dy);
         };
 
