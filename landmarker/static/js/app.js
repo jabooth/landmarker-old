@@ -37,14 +37,16 @@ requirejs(["jquery", "three",
         $(function () {
             app = new App.App;
             sidebar = new Sidebar.Sidebar({model: app});
-            viewport = new Viewport.ViewportTHREEView(
+            // note that we provide the Viewport with the canavas overlay of
+            // the viewport as requested.
+            viewport = new Viewport.Viewport(
                 {
                     model: app,
-                    el: $('#viewport')
+                    el: $('#vpoverlay')
                 });
-
             toolbar = new Toolbar.Toolbar({model: app.get('meshSource')});
 
+        // ----- KEYBOARD HANDLER ----- //
         $(window).keypress(function(e) {
             var key = e.which;
             switch (key) {

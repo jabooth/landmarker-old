@@ -3,24 +3,46 @@ function ($, _, Backbone, THREE, Camera) {
 
 "use strict";
 
-var ViewportTHREEView = Backbone.View.extend({
+var Viewport = Backbone.View.extend({
 
-    id: 'viewport',
+    id: 'vpoverlay',
 
     initialize: function () {
-        _.bindAll(this, 'resize', 'render', 'changeMesh',
-            'mousedownHandler', 'update');
-        this.$container = $('#viewportContainer');
 
+        // ----- CONFIGURATION ----- //
         this.meshScale = 1.0;  // The radius of the mesh's bounding sphere
         // the radius of the landmarks in the normalized scene
         // TODO this should be on app not Viewport
         this.landmarkScale = 0.01;
+        var clearColor = 0xAAAAAA;
 
-        // ------ SCENE GRAPH CONSTRUCTION -----
+        // TODO bind all methods on the Viewport
+        _.bindAll(this, 'resize', 'render', 'changeMesh',
+            'mousedownHandler', 'update');
+
+        // ----- DOM ----- //
+        // We have three DOM concerns:
+        //
+        //  viewportContainer: a flexbox container for general UI sizing
+        //    - vpoverlay: a Canvas overlay for 2D UI drawing
+        //    - viewport: our THREE managed WebGL view
+        //
+        // The viewport and vpoverlay need to be position:fixed for WebGL
+        // reasons. we listen for document resize and keep the size of these
+        // two children in sync with the viewportContainer parent.
+        this.$container = $('#viewportContainer');
+        // and grab the viewport div
+        this.$webglel = $('#viewport');
+        // Get a hold on the overlay canvas and its context (note we use the
+        // id - the Viewport should be passed the canvas element on
+        // construction)
+        this.canvas = document.getElementById(this.id);
+        this.ctx = this.canvas.getContext('2d');
+
+        // ------ SCENE GRAPH CONSTRUCTION ----- //
         this.scene = new THREE.Scene();
 
-        // --- SCENE: MODEL AND LANDMARKS ---
+        // ----- SCENE: MODEL AND LANDMARKS ----- //
         // s_meshAndLms stores the mesh and landmarks in the meshes original
         // coordinates. This is always transformed to the unit sphere for
         // consistency of camera.
@@ -36,14 +58,15 @@ var ViewportTHREEView = Backbone.View.extend({
         this.s_meshAndLms.add(this.s_mesh);
         this.scene.add(this.s_meshAndLms);
 
-        // --- SCENE: CAMERA AND DIRECTED LIGHTS ---
+        // ----- SCENE: CAMERA AND DIRECTED LIGHTS ----- //
         // s_camera holds the camera, and (optionally) any
         // lights that track with the camera as children
         this.s_camera = new THREE.PerspectiveCamera(50, 1, 0.02, 5000);
         this.s_camera.position.set(1.68, 0.35, 3.0);
         this.resetCamera();
 
-        // --- SCENE: GENERAL LIGHTING ---
+        // ----- SCENE: GENERAL LIGHTING ----- //
+        // TODO make lighting customizable
         this.s_lights = new THREE.Object3D();
         var pointLightLeft = new THREE.PointLight(0x404040, 1, 0);
         pointLightLeft.position.set(-100, 0, 100);
@@ -55,15 +78,14 @@ var ViewportTHREEView = Backbone.View.extend({
         // add a soft white ambient light
         this.s_lights.add(new THREE.AmbientLight(0x404040));
 
-
-        // TODO re-add non WebGL support (maybe)
         this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
-        var clearColor = 0xAAAAAA;
         this.renderer.setClearColor(clearColor, 1);
         this.renderer.autoClear = false;
-        //this.renderer.autoUpdateScene = false;
-        this.$el.html(this.renderer.domElement);
+        // attach the render on the element we picked out earlier
+        this.$webglel.html(this.renderer.domElement);
 
+        // we  build a second scene for various helpers we may need
+        // (intersection planes)
         this.sceneHelpers = new THREE.Scene();
 
         // add mesh if there already is one present (we have missed a
@@ -72,8 +94,21 @@ var ViewportTHREEView = Backbone.View.extend({
         if (mesh && mesh.t_mesh()) {
             this.changeMesh();
         }
-        var that = this;
 
+        // make an empty list of landmark views
+        this.landmarkViews = [];
+        this.cameraControls = Camera.CameraController(
+            this.s_camera, this.el);
+        // when the camera updates, render
+        this.cameraControls.on("change", this.update);
+
+        // ----- MOUSE HANDLER ----- //
+        // There is quite a lot of finicky state in handling the mouse
+        // interaction which is of no concern to the rest of the viewport.
+        // We wrap all this complexity up in a closure so it can enjoy access
+        // to the general viewport state without leaking it's state all over
+        // the place.
+        var that = this;
         this.handler = (function () {
         // x, y position of mouse on click states
         var onMouseDownPosition = new THREE.Vector2();
@@ -98,6 +133,8 @@ var ViewportTHREEView = Backbone.View.extend({
         var projector = new THREE.Projector();
 
         // ----- EVENTS ----- //
+        // General function for finding intersections from a mouse click event
+        // to some group of objects in s_scene.
         var getIntersects = function (event, object) {
             if (object === null || object.length === 0) {
                 return [];
@@ -114,6 +151,9 @@ var ViewportTHREEView = Backbone.View.extend({
             return ray.intersectObject(object, true);
         };
 
+        // Catch all for mouse interaction. This is what is bound on the canvas
+        // and delegates to various other mouse handlers once it figures out
+        // what the user has done.
         var onMouseDown = function (event) {
             event.preventDefault();
             that.$el.focus();
@@ -207,7 +247,6 @@ var ViewportTHREEView = Backbone.View.extend({
             }
         };
 
-
         var landmarkOnDrag = function (event) {
             console.log("drag");
             intersectionsOnPlane = getIntersects(event, intersectionPlane);
@@ -237,36 +276,21 @@ var ViewportTHREEView = Backbone.View.extend({
 
         var shiftOnDrag = function (event) {
             console.log("shift:drag");
-            intersectionsOnPlane = getIntersects(event, intersectionPlane);
-            if (intersectionsOnPlane.length > 0) {
-                var intersectMeshSpace = intersectionsOnPlane[0].point.clone();
-                var prevIntersectInMeshSpace = positionLmDrag.clone();
-                that.s_meshAndLms.worldToLocal(intersectMeshSpace);
-                that.s_meshAndLms.worldToLocal(prevIntersectInMeshSpace);
-                // change in this step in mesh space
-                deltaLmDrag.subVectors(intersectMeshSpace, prevIntersectInMeshSpace);
-                // update the position
-                positionLmDrag.copy(intersectionsOnPlane[0].point);
-                var activeGroup = that.model.get('landmarks').get('groups').active();
-                var selectedLandmarks = activeGroup.landmarks().selected();
-                var lm, lmP;
-                that.model.dispatcher().enableBatchRender();
-                for (var i = 0; i < selectedLandmarks.length; i++) {
-                    lm = selectedLandmarks[i];
-                    lmP = lm.point().clone();
-                    lmP.add(deltaLmDrag);
-                    //if (!lm.get('isChanging')) lm.set('isChanging', true);
-                    lm.setPoint(lmP);
-                }
-                that.model.dispatcher().disableBatchRender();
-            }
+            // clear the canvas and draw a selection rect.
+            that.clearCanvas();
+            var x = onMouseDownPosition.x;
+            var y = onMouseDownPosition.y;
+            var dx = event.offsetX - x;
+            var dy = event.offsetY - y;
+            that.ctx.fillRect(x, y, dx, dy);
         };
 
         var shiftOnMouseUp = function (event) {
             that.cameraControls.enable();
             console.log("shift:up");
             $(document).off('mousemove.shiftDrag', shiftOnDrag);
-
+            onMouseUpPosition.set(event.offsetX, event.offsetY);
+            that.clearCanvas();
         };
 
         var meshOnMouseUp = function (event) {
@@ -330,16 +354,9 @@ var ViewportTHREEView = Backbone.View.extend({
             }
         };
         return onMouseDown
-    })();
+        })();
 
-        // make an empty list of landmark views
-        this.landmarkViews = [];
-        this.cameraControls = Camera.CameraController(
-            this.s_camera, this.el);
-        // when the camera updates, render
-        this.cameraControls.on("change", that.update);
-
-        // Bind event listeners
+        // ----- BIND HANDLERS ----- //
         window.addEventListener('resize', this.resize, false);
         this.listenTo(this.model.get('meshSource'), "change:mesh", this.changeMesh);
         this.listenTo(this.model, "change:landmarks", this.changeLandmarks);
@@ -358,10 +375,10 @@ var ViewportTHREEView = Backbone.View.extend({
         'mousedown' : "mousedownHandler"
     },
 
-    resetCamera: function () {
-        this.s_camera.position.set(1.68, 0.35, 3.0);
-        this.s_camera.lookAt(this.scene.position);
-        this.update();
+    mousedownHandler: function (event) {
+        event.preventDefault();
+        // delegate to the handler closure
+        this.handler(event);
     },
 
     changeMesh: function () {
@@ -418,13 +435,6 @@ var ViewportTHREEView = Backbone.View.extend({
         })
     },
 
-    batchHandler: function (dispatcher) {
-        if (!dispatcher.isBatchRenderEnabled()) {
-            // just been turned off - trigger an update.
-            this.update();
-        }
-    },
-
     // this is called whenever there is a state change on the THREE scene
     update: function () {
         if (!this.renderer) {
@@ -440,6 +450,16 @@ var ViewportTHREEView = Backbone.View.extend({
         this.renderer.render(this.sceneHelpers, this.s_camera);
     },
 
+    resetCamera: function () {
+        this.s_camera.position.set(1.68, 0.35, 3.0);
+        this.s_camera.lookAt(this.scene.position);
+        this.update();
+    },
+
+    clearCanvas: function () {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+
     resize: function () {
         var w, h;
         w = this.$container.width();
@@ -447,84 +467,89 @@ var ViewportTHREEView = Backbone.View.extend({
         this.s_camera.aspect = w / h;
         this.s_camera.updateProjectionMatrix();
         this.renderer.setSize(w, h);
+        this.canvas.width = w;
+        this.canvas.height = h;
         this.update();
     },
 
-    mousedownHandler: function (event) {
-        console.log('mouse down');
-        event.preventDefault();
-        this.handler(event);
+    batchHandler: function (dispatcher) {
+        if (!dispatcher.isBatchRenderEnabled()) {
+            // just been turned off - trigger an update.
+            this.update();
+        }
     }
-    });
 
-    var LandmarkTHREEView = Backbone.View.extend({
+});
 
-        initialize: function (options) {
-            this.listenTo(this.model, "change", this.render);
-            this.group = options.group;
-            this.viewport = options.viewport;
-            this.listenTo(this.group, "change:active", this.render);
-            this.symbol = null; // a THREE object that represents this landmark.
-            // null if the landmark isEmpty
-            this.render();
-        },
 
-        render: function () {
-            if (this.symbol !== null) {
-                // this landmark already has an allocated representation..
-                if (this.model.isEmpty()) {
-                    // but it's been deleted.
-                    this.viewport.s_lms.remove(this.symbol);
-                    this.symbol = null;
+var LandmarkTHREEView = Backbone.View.extend({
 
-                } else {
-                    // the lm may need updating. See what needs to be done
-                    this.updateSymbol();
-                }
+    initialize: function (options) {
+        this.listenTo(this.model, "change", this.render);
+        this.group = options.group;
+        this.viewport = options.viewport;
+        this.listenTo(this.group, "change:active", this.render);
+        this.symbol = null; // a THREE object that represents this landmark.
+        // null if the landmark isEmpty
+        this.render();
+    },
+
+    render: function () {
+        if (this.symbol !== null) {
+            // this landmark already has an allocated representation..
+            if (this.model.isEmpty()) {
+                // but it's been deleted.
+                this.viewport.s_lms.remove(this.symbol);
+                this.symbol = null;
+
             } else {
-                // there is no symbol yet
-                if (!this.model.isEmpty()) {
-                    // and there should be! Make it and update it
-                    this.symbol = this.createSphere(this.model.get('point'),
-                        this.viewport.landmarkScale * this.viewport.meshScale, 1);
-                    this.updateSymbol();
-                    // and add it to the scene
-                    this.viewport.s_lms.add(this.symbol);
-                }
+                // the lm may need updating. See what needs to be done
+                this.updateSymbol();
             }
-            // tell our viewport to update
-            this.viewport.update();
-        },
-
-        createSphere: function (v, radius, selected) {
-            var wSegments = 10;
-            var hSegments = 10;
-            var geometry = new THREE.SphereGeometry(radius, wSegments, hSegments);
-            var landmark = new THREE.Mesh(geometry, createDummyMaterial(selected));
-            landmark.name = 'Sphere ' + landmark.id;
-            landmark.position.copy(v);
-            return landmark;
-            function createDummyMaterial(selected) {
-                var hexColor = 0xffff00;
-                if (selected) {
-                    hexColor = 0xff75ff
-                }
-                return new THREE.MeshPhongMaterial({color: hexColor});
-            }
-        },
-
-        updateSymbol: function () {
-            this.symbol.position.copy(this.model.point());
-            if (this.group.get('active') && this.model.isSelected()) {
-                this.symbol.material.color.setHex(0xff75ff);
-            } else {
-                this.symbol.material.color.setHex(0xffff00);
+        } else {
+            // there is no symbol yet
+            if (!this.model.isEmpty()) {
+                // and there should be! Make it and update it
+                this.symbol = this.createSphere(this.model.get('point'),
+                    this.viewport.landmarkScale * this.viewport.meshScale, 1);
+                this.updateSymbol();
+                // and add it to the scene
+                this.viewport.s_lms.add(this.symbol);
             }
         }
-    });
+        // tell our viewport to update
+        this.viewport.update();
+    },
 
-    return {
-        ViewportTHREEView: ViewportTHREEView
+    createSphere: function (v, radius, selected) {
+        var wSegments = 10;
+        var hSegments = 10;
+        var geometry = new THREE.SphereGeometry(radius, wSegments, hSegments);
+        var landmark = new THREE.Mesh(geometry, createDummyMaterial(selected));
+        landmark.name = 'Sphere ' + landmark.id;
+        landmark.position.copy(v);
+        return landmark;
+        function createDummyMaterial(selected) {
+            var hexColor = 0xffff00;
+            if (selected) {
+                hexColor = 0xff75ff
+            }
+            return new THREE.MeshPhongMaterial({color: hexColor});
+        }
+    },
+
+    updateSymbol: function () {
+        this.symbol.position.copy(this.model.point());
+        if (this.group.get('active') && this.model.isSelected()) {
+            this.symbol.material.color.setHex(0xff75ff);
+        } else {
+            this.symbol.material.color.setHex(0xffff00);
+        }
     }
+});
+
+return {
+    Viewport: Viewport
+}
 
 });
