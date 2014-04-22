@@ -399,6 +399,9 @@ var Viewport = Backbone.View.extend({
                 // landmark was pressed
                 if (lmPressedWasSelected && ctrl) {
                     lmPressed.deselect();
+                } else if (!ctrl) {
+                    lmPressed.collection.deselectAll();
+                    lmPressed.select();
                 }
             }
         };
