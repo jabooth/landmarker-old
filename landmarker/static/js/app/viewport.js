@@ -50,7 +50,11 @@ var Viewport = Backbone.View.extend({
         // s_lms stores the scene landmarks. This is a useful container to
         // get at all landmarks in one go, and is a child of s_meshAndLms
         this.s_lms = new THREE.Object3D();
+        // s_lmsconnectivity is used to store the connectivity representation
+        // of the mesh
+        this.s_lmsconnectivity = new THREE.Object3D();
         this.s_meshAndLms.add(this.s_lms);
+        this.s_meshAndLms.add(this.s_lmsconnectivity);
         // s_mesh is the parent of the mesh itself in the THREE scene.
         // This will only ever have one child (the mesh).
         // Child of s_meshAndLms
@@ -97,6 +101,7 @@ var Viewport = Backbone.View.extend({
 
         // make an empty list of landmark views
         this.landmarkViews = [];
+        this.connectivityViews = [];
         this.cameraControls = Camera.CameraController(
             this.s_camera, this.el);
         // when the camera updates, render
@@ -535,10 +540,14 @@ var Viewport = Backbone.View.extend({
         // 1. Clear the scene graph of all landmarks
         // TODO should this be a destructor on LandmarkView?
         this.s_meshAndLms.remove(this.s_lms);
+        this.s_meshAndLms.remove(this.s_lmsconnectivity);
         this.s_lms = new THREE.Object3D();
+        this.s_lmsconnectivity = new THREE.Object3D();
         this.s_meshAndLms.add(this.s_lms);
+        this.s_meshAndLms.add(this.s_lmsconnectivity);
         // 2. Build a fresh set of views - clear any existing lms
         this.landmarkViews = [];
+        this.connectivityViews = [];
         var groups = this.model.get('landmarks').get('groups');
         groups.each(function (group) {
             group.get('landmarks').each(function (lm) {
@@ -548,6 +557,15 @@ var Viewport = Backbone.View.extend({
                         group: group,
                         viewport: that
                     }));
+            });
+            _.each(group.connectivity(), function (a_to_b) {
+               that.connectivityViews.push(new LandmarkConnectionTHREEView(
+                   {
+                       model: [group.landmarks().at(a_to_b[0]),
+                               group.landmarks().at(a_to_b[1])],
+                       group: group,
+                       viewport: that
+                   }));
             });
         })
     },
@@ -662,6 +680,66 @@ var LandmarkTHREEView = Backbone.View.extend({
         } else {
             this.symbol.material.color.setHex(0xffff00);
         }
+    }
+});
+
+var LandmarkConnectionTHREEView = Backbone.View.extend({
+
+    initialize: function (options) {
+        // Listen to both models for changes
+        this.listenTo(this.model[0], "change", this.render);
+        this.listenTo(this.model[1], "change", this.render);
+        this.group = options.group;
+        this.viewport = options.viewport;
+        this.listenTo(this.group, "change:active", this.render);
+        this.symbol = null; // a THREE object that represents this connection.
+        // null if the landmark isEmpty
+        this.render();
+    },
+
+    render: function () {
+        if (this.symbol !== null) {
+            // this landmark already has an allocated representation..
+            if (this.model[0].isEmpty() || this.model[1].isEmpty()) {
+                // but it's been deleted.
+                this.viewport.s_lmsconnectivity.remove(this.symbol);
+                this.symbol = null;
+
+            } else {
+                // the connection may need updating. See what needs to be done
+                this.updateSymbol();
+            }
+        } else {
+            // there is no symbol yet
+            if (!this.model[0].isEmpty() && !this.model[1].isEmpty()) {
+                // and there should be! Make it and update it
+                this.symbol = this.createLine(this.model[0].get('point'),
+                        this.model[1].get('point'));
+                this.updateSymbol();
+                // and add it to the scene
+                this.viewport.s_lmsconnectivity.add(this.symbol);
+            }
+        }
+        // tell our viewport to update
+        this.viewport.update();
+    },
+
+    createLine: function (start, end) {
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff,
+            linewidth: 5
+        });
+        var geometry = new THREE.Geometry();
+        geometry.dynamic = true;
+        geometry.vertices.push(start.clone());
+        geometry.vertices.push(end.clone());
+        return new THREE.Line(geometry, material);
+    },
+
+    updateSymbol: function () {
+        this.symbol.geometry.vertices[0].copy(this.model[0].point());
+        this.symbol.geometry.vertices[1].copy(this.model[1].point());
+        this.symbol.geometry.verticesNeedUpdate = true;
     }
 });
 
