@@ -68,6 +68,21 @@ class LandmarkListForId(Resource):
         return adapter.landmark_ids(mesh_id)
 
 
+class Template(Resource):
+
+    def get(self, lm_id):
+        try:
+            return adapter.template_json(lm_id)
+        except:
+            abort(404, message="{} template not exist".format(lm_id))
+
+
+class TemplateList(Resource):
+
+    def get(self):
+        return adapter.templates()
+
+
 api_endpoint = '/api/v1/'
 
 api.add_resource(MeshList, api_endpoint + 'meshes')
@@ -82,6 +97,8 @@ api.add_resource(LandmarkListForId, api_endpoint +
 api.add_resource(Landmark, api_endpoint +
                  'landmarks/<string:mesh_id>/<string:lm_id>')
 
+api.add_resource(TemplateList, api_endpoint + 'templates')
+api.add_resource(Template, api_endpoint + 'templates/<string:lm_id>')
 
 # @app.route('/static')
 # def root():

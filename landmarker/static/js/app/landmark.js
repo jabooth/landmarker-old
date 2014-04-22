@@ -67,11 +67,12 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         },
 
         toJSON: function () {
-            var pointJSON = [null, null, null];
+            var pointJSON = null;
             var point;
             if (!this.isEmpty()) {
                 point = this.point();
                 pointJSON = [point.x, point.y, point.z];
+                // TODO handle 2D case here
             }
             return {
                 point: pointJSON
@@ -265,8 +266,13 @@ define(['backbone', 'three'], function(Backbone, THREE) {
     var LandmarkSet = Backbone.Model.extend({
 
         urlRoot: "api/v1/landmarks",
+        urlTemplateRoot: "api/v1/templates",
+
 
         url: function () {
+            if (this.get('from_template')) {
+                return this.urlTemplateRoot + '/' + this.get('type');
+            }
             return this.urlRoot + '/' + this.id + '/' + this.get('type');
         },
 
@@ -321,17 +327,23 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 _.map(json.groups, function (lmks, label) {
                 var lmList = new LandmarkList(
                     _.map(lmks.landmarks, function (point) {
+                    var x, y, z;
                     var index = _.indexOf(lmks.landmarks, point);
-                    if (point.point[0] === null) {
+                    if (point.point === null) {
                         return new Landmark({index: index});
-                    } else {
-                        var x, y, z;
+                    } else if (point.point.length == 3) {
                         x = point.point[0];
                         y = point.point[1];
                         z = point.point[2];
-                        // TODO handle index here
                         return new Landmark({
                             point: new THREE.Vector3(x, y, z),
+                            index: index
+                        });
+                    } else if (point.point.length == 2) {
+                        x = point.point[0];
+                        y = point.point[1];
+                        return new Landmark({
+                            point: new THREE.Vector2(x, y),
                             index: index
                         });
                     }

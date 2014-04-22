@@ -6,7 +6,8 @@ class Config:
 
 config = Config
 config.gzip = False  # halves payload, increases server workload
-config.model_dir = './models'
-config.landmark_dir = './landmarks'
+model_dir = '/Users/jab08/landmarkerdata/models'
+landmark_dir = '/Users/jab08/landmarkerdata/landmarks'
+template_dir = '/Users/jab08/landmarkerdata/templates'
 
-adapter = MenpoAdapter(config.model_dir, config.landmark_dir)
+adapter = MenpoAdapter(model_dir, landmark_dir, template_dir)

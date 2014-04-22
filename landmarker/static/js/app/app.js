@@ -8,8 +8,7 @@ define(['backbone', './landmark', './mesh', './dispatcher'],
         defaults: function () {
             return {
                 meshSource: new Mesh.MeshSource,
-                landmarkType: 'shiyang',
-                templateName: '.template'
+                landmarkType: 'ibug68'
             }
         },
 
@@ -48,12 +47,12 @@ define(['backbone', './landmark', './mesh', './dispatcher'],
                     // can't find landmarks for this person! Grab the template
                     // instead
                     console.log("couldn't get the landmarks");
-                    landmarks.id = that.get('templateName');
+                    landmarks.set('from_template', 'true');
                     landmarks.fetch({
                         success: function () {
                             console.log('got the template landmarks!');
                             that.set('landmarks', landmarks);
-                            landmarks.id = that.mesh().id;
+                            landmarks.unset('from_template');
                         }
                     });
                 }

@@ -10,6 +10,8 @@ import StringIO
 import menpo.io as mio
 from menpo.shape.mesh import TriMesh, TexturedTriMesh
 
+from utils import load_template
+
 
 class LandmarkerJSAdapter(object):
 
@@ -23,6 +25,13 @@ class LandmarkerJSAdapter(object):
     def mesh_json(self, mesh_id):
         pass
 
+    @abc.abstractmethod
+    def textured_mesh_ids(self):
+        pass
+
+    @abc.abstractmethod
+    def texture_file(self, mesh_id):
+        pass
     @abc.abstractmethod
     def all_landmarks(self):
         pass
@@ -40,11 +49,11 @@ class LandmarkerJSAdapter(object):
         pass
 
     @abc.abstractmethod
-    def textured_mesh_ids(self):
+    def templates(self):
         pass
 
     @abc.abstractmethod
-    def texture_file(self, mesh_id):
+    def template_json(self, lm_id):
         pass
 
 
@@ -58,9 +67,10 @@ def as_jpg_file(image):
 
 class MenpoAdapter(LandmarkerJSAdapter):
 
-    def __init__(self, model_dir, landmark_dir):
+    def __init__(self, model_dir, landmark_dir, template_dir):
         self.model_dir = model_dir
         self.landmark_dir = landmark_dir
+        self.template_dir = template_dir
         print('Importing meshes...')
         self.meshes = {}
         self.textures = {}
@@ -72,22 +82,21 @@ class MenpoAdapter(LandmarkerJSAdapter):
         print(' - {} meshes imported.'.format(len(self.meshes)))
         print(' - {} meshes are textured.'.format(len(self.textures)))
 
-        # HACK - Import basel face model for now.
-        import scipy.io as sio
-        x = sio.loadmat("/Users/jab08/Desktop/01_MorphableModel.mat")
-        mean_head, trilist = x['shapeMU'], x['tl']
-        trilist[:, [0, 1]] = trilist[:, [1, 0]]
-        model = TriMesh(mean_head.reshape([-1, 3]), trilist=trilist - 1)
-        self.meshes["basel"] = model.tojson()
+        # # HACK - Import basel face model for now.
+        # import scipy.io as sio
+        # x = sio.loadmat("/Users/jab08/Desktop/01_MorphableModel.mat")
+        # mean_head, trilist = x['shapeMU'], x['tl']
+        # trilist[:, [0, 1]] = trilist[:, [1, 0]]
+        # model = TriMesh(mean_head.reshape([-1, 3]), trilist=trilist - 1)
+        # self.meshes["basel"] = model.tojson()
 
     def landmark_fp(self, model_id, lm_id):
-        lm_dir = p.join(self.landmark_dir, model_id)
-        return p.join(lm_dir, lm_id + '.json')
+        return p.join(self.landmark_dir, model_id, lm_id + '.json')
 
-    def list_landmarks(self, mesh_id=None):
+    def landmark_paths(self, mesh_id=None):
         if mesh_id is None:
             mesh_id = '*'
-        g = glob.glob(p.join(self.landmark_dir, mesh_id, "*"))
+        g = glob.glob(p.join(self.landmark_dir, mesh_id, '*'))
         return filter(lambda f: p.isfile(f) and
                                 p.splitext(f)[-1] == '.json', g)
 
@@ -97,8 +106,14 @@ class MenpoAdapter(LandmarkerJSAdapter):
     def mesh_json(self, mesh_id):
         return self.meshes[mesh_id]
 
+    def textured_mesh_ids(self):
+        return list(self.textures)
+
+    def texture_file(self, mesh_id):
+        return deepcopy(self.textures[mesh_id])
+
     def all_landmarks(self):
-        landmark_files = self.list_landmarks()
+        landmark_files = self.landmark_paths()
         mapping = defaultdict(list)
         for lm_path in landmark_files:
             dir_path, filename = p.split(lm_path)
@@ -108,7 +123,7 @@ class MenpoAdapter(LandmarkerJSAdapter):
         return mapping
 
     def landmark_ids(self, mesh_id):
-        landmark_files = self.list_landmarks(mesh_id=mesh_id)
+        landmark_files = self.landmark_paths(mesh_id=mesh_id)
         return [p.splitext(p.split(f)[-1])[0] for f in landmark_files]
 
     def landmark_json(self, mesh_id, lm_id):
@@ -128,8 +143,12 @@ class MenpoAdapter(LandmarkerJSAdapter):
             json.dump(lm_json, f, sort_keys=True, indent=4,
                       separators=(',', ': '))
 
-    def textured_mesh_ids(self):
-        return list(self.textures)
+    def templates(self):
+        template_paths = glob.glob(p.join(self.template_dir, '*.lmt'))
+        print self.template_dir
+        print template_paths
+        return [p.splitext(p.split(t)[-1])[0] for t in template_paths]
 
-    def texture_file(self, mesh_id):
-        return deepcopy(self.textures[mesh_id])
+    def template_json(self, lm_id):
+        fp = p.join(self.template_dir, lm_id + '.lmt')
+        return load_template(fp)
