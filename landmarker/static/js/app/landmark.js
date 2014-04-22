@@ -134,12 +134,18 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
     var LandmarkGroup = Backbone.Model.extend({
 
+        // TODO check the list in here is OK
         defaults : function () {
             return {
                 landmarks: new LandmarkList,
                 label: 'group_label',
-                active: false
+                active: false,
+                connectivity: []
             };
+        },
+
+        connectivity: function () {
+            return this.get('connectivity');
         },
 
         isActive: function () {
@@ -175,7 +181,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
         toJSON: function () {
             return {
-                landmarks: this.landmarks()
+                landmarks: this.landmarks(),
+                connectivity: this.connectivity()
             };
         }
 
@@ -324,32 +331,39 @@ define(['backbone', 'three'], function(Backbone, THREE) {
                 return;
             }
             var landmarkGroupList = new LandmarkGroupList(
-                _.map(json.groups, function (lmks, label) {
-                var lmList = new LandmarkList(
-                    _.map(lmks.landmarks, function (point) {
-                    var x, y, z;
-                    var index = _.indexOf(lmks.landmarks, point);
-                    if (point.point === null) {
-                        return new Landmark({index: index});
-                    } else if (point.point.length == 3) {
-                        x = point.point[0];
-                        y = point.point[1];
-                        z = point.point[2];
-                        return new Landmark({
-                            point: new THREE.Vector3(x, y, z),
-                            index: index
+                _.map(json.groups, function (group, label) {
+                    var lmList = new LandmarkList(
+                        _.map(group.landmarks, function (lm) {
+                            var x, y, z;
+                            var index = _.indexOf(group.landmarks, lm);
+                            if (lm.point === null) {
+                                return new Landmark({index: index});
+                            } else if (lm.point.length == 3) {
+                                x = lm.point[0];
+                                y = lm.point[1];
+                                z = lm.point[2];
+                                return new Landmark({
+                                    point: new THREE.Vector3(x, y, z),
+                                    index: index
+                                });
+                            } else if (lm.point.length == 2) {
+                                x = lm.point[0];
+                                y = lm.point[1];
+                                return new Landmark({
+                                    point: new THREE.Vector2(x, y),
+                                    index: index
+                                });
+                            }
+                        })
+                    );
+                    return new LandmarkGroup(
+                        {
+                            landmarks: lmList,
+                            label: label,
+                            connectivity: group.connectivity
                         });
-                    } else if (point.point.length == 2) {
-                        x = point.point[0];
-                        y = point.point[1];
-                        return new Landmark({
-                            point: new THREE.Vector2(x, y),
-                            index: index
-                        });
-                    }
-                }));
-                return new LandmarkGroup({landmarks: lmList, label: label});
-            }));
+                })
+            );
             landmarkGroupList.at(0).activate();
             return {groups: landmarkGroupList};
         },
