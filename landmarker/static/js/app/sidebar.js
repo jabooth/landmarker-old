@@ -135,7 +135,11 @@ define(['jquery', 'underscore', 'backbone'], function ($, _, Backbone) {
         },
 
         activate: function () {
-            this.model.activate();
+            if (this.model.isActive()) {
+                this.model.landmarks().selectAll();
+            } else {
+                this.model.activate();
+            }
         },
 
         initialize : function() {

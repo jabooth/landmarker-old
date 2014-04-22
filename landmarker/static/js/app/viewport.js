@@ -102,6 +102,7 @@ var Viewport = Backbone.View.extend({
         // when the camera updates, render
         this.cameraControls.on("change", this.update);
 
+        var downEvent, lmPressed, lmPressedWasSelected;
 
         // Tools for moving betweens screen and world coordinates
         this.ray = new THREE.Raycaster();
@@ -142,6 +143,7 @@ var Viewport = Backbone.View.extend({
         var onMouseDown = function (event) {
             event.preventDefault();
             that.$el.focus();
+            downEvent = event;
             onMouseDownPosition.set(event.offsetX, event.offsetY);
             if (event.button === 0 && event.shiftKey) {
                 shiftPressed();  // LMB + SHIFT
@@ -174,34 +176,47 @@ var Viewport = Backbone.View.extend({
                 $(document).one('mouseup.viewportMesh', meshOnMouseUp);
             }
 
-            function landmarkPressed(event) {
+            function landmarkPressed() {
+                var ctrl = (downEvent.ctrlKey || downEvent.metaKey);
                 console.log('landmark pressed!');
                 // before anything else, disable the camera
                 that.cameraControls.disable();
                 // the clicked on landmark
                 var landmarkSymbol = intersectionsWithLms[0].object;
-                var landmark, group;
+                var group;
                 // hunt through the landmarkViews for the right symbol
                 for (var i = 0; i < that.landmarkViews.length; i++) {
                     if (that.landmarkViews[i].symbol === landmarkSymbol) {
-                        landmark = that.landmarkViews[i].model;
+                        lmPressed = that.landmarkViews[i].model;
                         group = that.landmarkViews[i].group;
                     }
                 }
                 group.activate();
-                if (group.landmarks().nSelected() >= 1) {
-                    // This is a multiple selection -
+                lmPressedWasSelected = lmPressed.isSelected();
+                if (!lmPressedWasSelected && !ctrl) {
+                    // this lm wasn't pressed before and we aren't holding
+                    // mutliselection down - deselect rest and select this
+                    console.log("normal click on a unselected lm - deselecting rest and selecting me");
+                    lmPressed.collection.deselectAll();
+                    lmPressed.select();
                 }
-                if ((event.ctrlKey || event.metaKey)) {
-                    if(landmark.isSelected()) {
-                        landmark.deselect();
-                    } else {
-                        landmark.select();
-                    }
-                } else {
-                    landmark.collection.deselectAll();
-                    landmark.select();
+                if (ctrl && !lmPressedWasSelected) {
+                    lmPressed.select();
                 }
+
+//                if (group.landmarks().nSelected() >= 1) {
+//                    // This is a multiple selection -
+//                }
+//                if ((event.ctrlKey || event.metaKey)) {
+//                    if(landmark.isSelected()) {
+//                        landmark.deselect();
+//                    } else {
+//                        landmark.select();
+//                    }
+//                } else {
+//                    landmark.collection.deselectAll();
+//                    landmark.select();
+//                }
                 // now we've selected the landmark, we want to enable dragging.
                 // Fix the intersection plane to be where we clicked, only a
                 // little nearer to the camera.
@@ -344,13 +359,14 @@ var Viewport = Backbone.View.extend({
         };
 
         var landmarkOnMouseUp = function (event) {
+            var ctrl = downEvent.ctrlKey || downEvent.metaKey;
             that.cameraControls.enable();
             console.log("landmarkPress:up");
             $(document).off('mousemove.landmarkDrag');
             var lm;
             onMouseUpPosition.set(event.offsetX, event.offsetY);
             if (onMouseDownPosition.distanceTo(onMouseUpPosition) > 2) {
-                // snap landmarks back onto the mesh
+                // landmark was dragged
                 var activeGroup = that.model.get('landmarks').get('groups').active();
                 var selectedLandmarks = activeGroup.landmarks().selected();
                 var camToLm;
@@ -378,6 +394,11 @@ var Viewport = Backbone.View.extend({
                     }
                     // only here as all landmarks were successfully moved
                     //landmarkSet.snapshotGroup(); // snapshot the active group
+                }
+            } else {
+                // landmark was pressed
+                if (lmPressedWasSelected && ctrl) {
+                    lmPressed.deselect();
                 }
             }
         };

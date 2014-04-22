@@ -149,6 +149,7 @@ define(['backbone', 'three'], function(Backbone, THREE) {
             if (!this.isActive()) {
                 this.collection.deactivateAll();
                 this.set('active', true);
+                this.landmarks().deselectAll();
             }
         },
 
