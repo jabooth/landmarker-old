@@ -114,13 +114,18 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             });
             var material;
             var result;
+            var that = this;
             if (response.tcoords) {
                 // this mesh has a texture - grab it
                 var textureURL = this.get('server').map('textures/' +
                                                         this.id);
                 material = new THREE.MeshPhongMaterial(
                     {
-                        map: THREE.ImageUtils.loadTexture(textureURL)
+                        map: THREE.ImageUtils.loadTexture(
+                            textureURL, new THREE.UVMapping(),
+                            function() {
+                                that.trigger("textureSet");
+                            } )
                     }
                 );
                 // We expect per-vertex texture coords only. Three js has per
