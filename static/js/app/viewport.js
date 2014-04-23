@@ -1,9 +1,12 @@
-define(['jquery', 'underscore', 'backbone', 'three', './camera'],
-function ($, _, Backbone, THREE, Camera) {
+var $ = require('jquery');
+var _ = require('underscore');
+var Backbone = require('backbone');
+var THREE = require('three');
+var Camera = require('./camera');
 
 "use strict";
 
-var Viewport = Backbone.View.extend({
+exports.Viewport = Backbone.View.extend({
 
     id: 'vpoverlay',
 
@@ -741,10 +744,4 @@ var LandmarkConnectionTHREEView = Backbone.View.extend({
         this.symbol.geometry.vertices[1].copy(this.model[1].point());
         this.symbol.geometry.verticesNeedUpdate = true;
     }
-});
-
-return {
-    Viewport: Viewport
-}
-
 });

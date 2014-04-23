@@ -1,0 +1,28 @@
+{
+    "name": "landmarker-io",
+    "version": "0.0.1",
+    "description": "3D mesh annotation in your browser.",
+    "main": "index.js",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/menpo/landmarker-io.git"
+    },
+    "keywords": [
+        "webgl",
+        "three"
+    ],
+    "author": "James Booth <jabooth@gmail.com> (github.com/jabooth)",
+    "license": "BSD",
+    "devDependencies": {
+        "browserify": "~3.30.0",
+        "broserify-shim": "~3.4.1"
+    },
+    "dependencies": {
+        "jquery": "~0.1.2",
+        "backbone": "~0.2.0",
+        "underscore": "~0.1.0"
+    },
+    "browserify-shim": {
+        "three": "global:THREE"
+    }
+}

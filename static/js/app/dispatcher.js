@@ -1,34 +1,29 @@
-define(['backbone'], function(Backbone) {
+var backbone = require('backbone');
 
-    "use strict";
+"use strict";
 
-    var Dispatcher = Backbone.Model.extend({
+exports.Dispatcher = backbone.Model.extend({
 
-        defaults: function () {
-            return {
-                BATCH_RENDER: false
-            }
-        },
-
-        rerender: function () {
-            this.trigger('rerender');
-        },
-
-        enableBatchRender: function () {
-            this.set('BATCH_RENDER', true);
-        },
-
-        disableBatchRender: function () {
-            this.set('BATCH_RENDER', false);
-        },
-
-        isBatchRenderEnabled: function () {
-            return this.get('BATCH_RENDER');
+    defaults: function () {
+        return {
+            BATCH_RENDER: false
         }
+    },
 
-    });
+    rerender: function () {
+        this.trigger('rerender');
+    },
 
-    return {
-        Dispatcher: Dispatcher
+    enableBatchRender: function () {
+        this.set('BATCH_RENDER', true);
+    },
+
+    disableBatchRender: function () {
+        this.set('BATCH_RENDER', false);
+    },
+
+    isBatchRenderEnabled: function () {
+        return this.get('BATCH_RENDER');
     }
+
 });

@@ -1,29 +1,22 @@
-define(['backbone'], function(Backbone) {
+var Backbone = require('backbone');
 
-    "use strict";
+exports.Server = Backbone.Model.extend({
 
-    var Server = Backbone.Model.extend({
+    apiHeader: '/api/v1/',
 
-        apiHeader: '/api/v1/',
-
-        defaults: function () {
-            return {
-                apiURL: ''
-            }
-        },
-
-        apiURL: function () {
-            return this.get('apiURL');
-        },
-
-        map: function (url) {
-            console.log('dynamically remapping');
-            return this.get('apiURL') + this.apiHeader + url;
+    defaults: function () {
+        return {
+            apiURL: ''
         }
+    },
 
-    });
+    apiURL: function () {
+        return this.get('apiURL');
+    },
 
-    return {
-        Server: Server
+    map: function (url) {
+        console.log('dynamically remapping');
+        return this.get('apiURL') + this.apiHeader + url;
     }
+
 });
