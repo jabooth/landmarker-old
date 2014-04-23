@@ -2,6 +2,7 @@ from flask import Flask, request, send_file
 from flask.ext.restful import abort, Api, Resource
 
 from config import adapter, config
+from utils import crossdomain
 
 
 app = Flask(__name__, static_url_path='')
@@ -15,6 +16,7 @@ api = Api(app)
 
 class Mesh(Resource):
 
+    @crossdomain(origin='*')
     def get(self, mesh_id):
         try:
             return adapter.mesh_json(mesh_id)
@@ -24,12 +26,14 @@ class Mesh(Resource):
 
 class MeshList(Resource):
 
+    @crossdomain(origin='*')
     def get(self):
         return adapter.mesh_ids()
 
 
 class Texture(Resource):
 
+    @crossdomain(origin='*')
     def get(self, mesh_id):
         try:
             return send_file(adapter.texture_file(mesh_id),
@@ -40,36 +44,43 @@ class Texture(Resource):
 
 class TextureList(Resource):
 
+    @crossdomain(origin='*')
     def get(self):
         return adapter.textured_mesh_ids()
 
 
 class Landmark(Resource):
 
+    @crossdomain(origin='*')
     def get(self, mesh_id, lm_id):
         try:
             return adapter.landmark_json(mesh_id, lm_id)
         except:
             abort(404, message="{}:{} does not exist".format(mesh_id, lm_id))
 
+    @crossdomain(origin='*')
     def put(self, mesh_id, lm_id):
         return adapter.save_landmark_json(mesh_id, lm_id, request.json)
 
 
 class LandmarkList(Resource):
 
+    @crossdomain(origin='*')
     def get(self):
+        print 'asked for list'
         return adapter.all_landmarks()
 
 
 class LandmarkListForId(Resource):
 
+    @crossdomain(origin='*')
     def get(self, mesh_id):
         return adapter.landmark_ids(mesh_id)
 
 
 class Template(Resource):
 
+    @crossdomain(origin='*')
     def get(self, lm_id):
         try:
             return adapter.template_json(lm_id)
@@ -79,6 +90,7 @@ class Template(Resource):
 
 class TemplateList(Resource):
 
+    @crossdomain(origin='*')
     def get(self):
         return adapter.templates()
 

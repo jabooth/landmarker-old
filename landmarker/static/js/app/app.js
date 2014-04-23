@@ -1,5 +1,6 @@
-define(['backbone', './landmark', './mesh', './dispatcher'],
-    function (Backbone, Landmark, Mesh, Dispatcher) {
+define(['backbone', './landmark', './mesh', './dispatcher',
+        './server'],
+    function (Backbone, Landmark, Mesh, Dispatcher, Server) {
 
     "use strict";
 
@@ -7,15 +8,33 @@ define(['backbone', './landmark', './mesh', './dispatcher'],
 
         defaults: function () {
             return {
-                meshSource: new Mesh.MeshSource,
-                landmarkType: 'ibug68'
+                landmarkType: 'ibug68',
+                apiURL: ''
             }
         },
 
+        server: function () {
+            return this.get('server');
+        },
+
         initialize: function () {
-            this.set('dispatcher', new Dispatcher.Dispatcher);
             _.bindAll(this, 'meshChanged');
-            // retrieve the list of meshes.
+            this.set('dispatcher', new Dispatcher.Dispatcher);
+            // construct a new server to handle dynamic remapping of URLs
+            this.set('server', new Server.Server(
+                {
+                    apiURL: this.get('apiURL')
+                }
+            ));
+            // construct a mesh source (which can query for mesh information
+            // from the server). Of course, we must pass the server in. The
+            // mesh source will ensure that the meshes produced also get
+            // attached to this server.
+            this.set('meshSource', new Mesh.MeshSource(
+                {
+                    server:this.server()
+                }
+            ));
             var meshes = this.get('meshSource');
             var that = this;
             meshes.fetch({
@@ -24,6 +43,8 @@ define(['backbone', './landmark', './mesh', './dispatcher'],
                     meshSource.setMesh(meshSource.get('meshes').at(0));
                 }
             });
+            // whenever our mesh source changes it's current mesh we need
+            // to run the application logic.
             this.listenTo(meshes, 'change:mesh', this.meshChanged);
         },
 
@@ -33,10 +54,15 @@ define(['backbone', './landmark', './mesh', './dispatcher'],
 
         meshChanged: function () {
             console.log('mesh has been changed on the meshSource!');
-            var landmarks = new Landmark.LandmarkSet({
-                id: this.mesh().id,
-                type: this.get('landmarkType')
-            });
+            // build new landmarks - they need to know where to fetch from
+            // so attach the server.
+            var landmarks = new Landmark.LandmarkSet(
+                {
+                    id: this.mesh().id,
+                    type: this.get('landmarkType'),
+                    server: this.get('server')
+                }
+            );
             var that = this;
             landmarks.fetch({
                 success: function () {

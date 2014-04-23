@@ -6,7 +6,11 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
 
     var Mesh = Backbone.Model.extend({
 
-        urlRoot: "api/v1/meshes",
+        urlRoot: "meshes",
+
+        url: function () {
+            return this.get('server').map(this.urlRoot + '/' + this.id);
+        },
 
         t_mesh: function () {
             return this.get('t_mesh');
@@ -112,9 +116,13 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             var result;
             if (response.tcoords) {
                 // this mesh has a texture - grab it
-                material = new THREE.MeshPhongMaterial( {
-                    map: THREE.ImageUtils.loadTexture(
-                        'api/v1/textures/' + this.id)});
+                var textureURL = this.get('server').map('api/v1/textures/' +
+                                                        this.id);
+                material = new THREE.MeshPhongMaterial(
+                    {
+                        map: THREE.ImageUtils.loadTexture(textureURL)
+                    }
+                );
                 // We expect per-vertex texture coords only. Three js has per
                 // face tcoords, so we need to handle the conversion.
                 // First - generate all the tcoords in a list
@@ -170,12 +178,16 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
         },
 
         url: function () {
-            return "api/v1/meshes";
+            return this.get('server').map("meshes");
         },
 
         parse: function (response) {
+            var that = this;
             var meshes = _.map(response, function (meshId) {
-               return new Mesh({id: meshId})
+                return new Mesh({
+                    id: meshId,
+                    server: that.get('server')
+                })
             });
             var meshList = new MeshList(meshes);
             return {

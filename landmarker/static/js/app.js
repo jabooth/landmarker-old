@@ -35,9 +35,9 @@ requirejs(["jquery", "three",
         "use strict";
 
         $(function () {
-            app = new App.App;
+            app = new App.App({apiURL: 'http://localhost:5000'});
             sidebar = new Sidebar.Sidebar({model: app});
-            // note that we provide the Viewport with the canavas overlay of
+            // note that we provide the Viewport with the canvas overlay of
             // the viewport as requested.
             viewport = new Viewport.Viewport(
                 {

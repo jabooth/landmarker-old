@@ -272,15 +272,18 @@ define(['backbone', 'three'], function(Backbone, THREE) {
 
     var LandmarkSet = Backbone.Model.extend({
 
-        urlRoot: "api/v1/landmarks",
-        urlTemplateRoot: "api/v1/templates",
+        urlRoot: "landmarks",
+        urlTemplateRoot: "templates",
 
 
         url: function () {
+            var url;
             if (this.get('from_template')) {
-                return this.urlTemplateRoot + '/' + this.get('type');
+                url = this.urlTemplateRoot + '/' + this.get('type');
+            } else {
+                url = this.urlRoot + '/' + this.id + '/' + this.get('type');
             }
-            return this.urlRoot + '/' + this.id + '/' + this.get('type');
+            return this.get('server').map(url);
         },
 
         defaults: function () {
@@ -371,7 +374,8 @@ define(['backbone', 'three'], function(Backbone, THREE) {
         toJSON: function () {
             return {
                 groups: this.get('groups'),
-                version: 1};
+                version: 1
+            };
         }
     });
 
