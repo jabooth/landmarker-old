@@ -35,6 +35,9 @@ requirejs(["jquery", "three",
         "use strict";
 
         $(function () {
+            // allow CORS loading of textures
+            // https://github.com/mrdoob/three.js/issues/687
+            THREE.ImageUtils.crossOrigin = "";
             app = new App.App({apiURL: 'http://localhost:5000'});
             sidebar = new Sidebar.Sidebar({model: app});
             // note that we provide the Viewport with the canvas overlay of

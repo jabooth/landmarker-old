@@ -116,7 +116,7 @@ define(["underscore", "Backbone", "three"], function(_, Backbone, THREE) {
             var result;
             if (response.tcoords) {
                 // this mesh has a texture - grab it
-                var textureURL = this.get('server').map('api/v1/textures/' +
+                var textureURL = this.get('server').map('textures/' +
                                                         this.id);
                 material = new THREE.MeshPhongMaterial(
                     {
