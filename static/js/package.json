@@ -14,13 +14,13 @@
     "author": "James Booth <jabooth@gmail.com> (github.com/jabooth)",
     "license": "BSD",
     "devDependencies": {
-        "browserify": "~3.30.0",
-        "broserify-shim": "~3.4.1"
+        "browserify": "~3.44.2",
+        "browserify-shim": "~3.4.1"
     },
     "dependencies": {
-        "jquery": "~0.1.2",
-        "backbone": "~0.2.0",
-        "underscore": "~0.1.0"
+        "jquery": "~2.1.0",
+        "backbone": "~1.1.2",
+        "underscore": "~1.6.0"
     },
     "browserify-shim": {
         "three": "global:THREE"
